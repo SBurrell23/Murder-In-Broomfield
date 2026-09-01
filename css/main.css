@@ -46,6 +46,20 @@
 
 * { box-sizing: border-box; }
 
+/* A magnifying glass follows the pointer everywhere; anything clickable gets a
+   lit lens so affordance is not lost. Hotspot sits at the centre of the lens. */
+:root {
+  --cursor-glass: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2730%27%20height%3D%2730%27%20viewBox%3D%270%200%2030%2030%27%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27%230a0a0e%27%20stroke-width%3D%275.2%27%20stroke-linecap%3D%27round%27%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%277.6%27%2F%3E%3Cpath%20d%3D%27M17.6%2017.6%20L26%2026%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%277.6%27%20fill%3D%27rgba%28210%2C225%2C255%2C0.10%29%27%2F%3E%3Cg%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%277.6%27%20stroke%3D%27%23c9a227%27%20stroke-width%3D%272.6%27%2F%3E%3Cpath%20d%3D%27M17.6%2017.6%20L26%2026%27%20stroke%3D%27%23c9a227%27%20stroke-width%3D%273.4%27%2F%3E%3Cpath%20d%3D%27M8.4%209.6%20A5.4%205.4%200%200%201%2012%206.6%27%20stroke%3D%27%23fff%27%20stroke-opacity%3D%27.55%27%20stroke-width%3D%271.5%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 12 12, auto;
+  --cursor-glass-lit: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2730%27%20height%3D%2730%27%20viewBox%3D%270%200%2030%2030%27%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27%230a0a0e%27%20stroke-width%3D%275.2%27%20stroke-linecap%3D%27round%27%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%277.6%27%2F%3E%3Cpath%20d%3D%27M17.6%2017.6%20L26%2026%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%277.6%27%20fill%3D%27rgba%28201%2C162%2C39%2C0.30%29%27%2F%3E%3Cg%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%277.6%27%20stroke%3D%27%23f0d060%27%20stroke-width%3D%272.6%27%2F%3E%3Cpath%20d%3D%27M17.6%2017.6%20L26%2026%27%20stroke%3D%27%23f0d060%27%20stroke-width%3D%273.4%27%2F%3E%3Cpath%20d%3D%27M8.4%209.6%20A5.4%205.4%200%200%201%2012%206.6%27%20stroke%3D%27%23fff%27%20stroke-opacity%3D%27.55%27%20stroke-width%3D%271.5%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 12 12, pointer;
+}
+html, body, * { cursor: var(--cursor-glass); }
+a, button, select, summary, label.switch-row, input[type=range], input[type=checkbox],
+.card.is-pickable, .tile.is-live .tile-opt, .tile.is-selectable, .code-chip,
+.seat-kick, .suspect-btn, .icon-btn, .modal-x, [role="button"] {
+  cursor: var(--cursor-glass-lit);
+}
+button:disabled, .btn:disabled { cursor: var(--cursor-glass); }
+
 html, body {
   margin: 0; padding: 0;
   min-height: 100%;
@@ -297,6 +311,9 @@ input[type=text]::placeholder { color: var(--text-faint); }
   position: fixed; top: 1rem; right: 1rem;
   display: flex; gap: .5rem; z-index: 60;
 }
+/* On the game board the bar is moved into the banner, so it stops floating. */
+.util-bar.in-head { position: static; top: auto; right: auto; z-index: auto; }
+.util-bar.in-head .icon-btn { width: 34px; height: 34px; }
 
 /* ------------------------------------------------------------ panel ---- */
 

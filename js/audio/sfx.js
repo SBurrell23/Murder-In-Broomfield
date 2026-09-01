@@ -159,14 +159,27 @@ class AudioEngine {
     this._noise({ dur: 0.12, peak: 0.16, type: 'highpass', freq: 900, sweep: 2600, a: 0.004, r: 0.05 });
   }
 
-  // A round brass casing set down on glass, with a low report behind it.
+  // A gunshot. Four layers, because a single noise burst reads as a click:
+  // a bright transient crack, the broadband body of the report, a low chest
+  // thump, and a short tail that suggests the room it went off in.
   bulletPlace() {
     if (!this.ctx) return;
     const t = this._now();
-    this._noise({ t0: t, dur: 0.09, peak: 0.34, type: 'lowpass', freq: 900, sweep: 180, a: 0.001, r: 0.05 });
-    this._tone({ t0: t, freq: 180, type: 'sine', dur: 0.16, peak: 0.3, glide: 60, a: 0.001, r: 0.09 });
-    this._tone({ t0: t + 0.015, freq: 2400, type: 'triangle', dur: 0.28, peak: 0.11, a: 0.002, r: 0.22 });
-    this._tone({ t0: t + 0.02, freq: 3180, type: 'sine', dur: 0.34, peak: 0.06, a: 0.002, r: 0.28 });
+
+    // Crack: the supersonic snap, very short and very bright.
+    this._noise({ t0: t, dur: 0.035, peak: 0.75, type: 'highpass', freq: 2600, sweep: 5200, a: 0.0004, r: 0.02 });
+
+    // Report: the main body, sweeping down as the pressure wave collapses.
+    this._noise({ t0: t + 0.002, dur: 0.14, peak: 0.62, type: 'lowpass', freq: 3600, sweep: 320, a: 0.0006, r: 0.1 });
+    this._noise({ t0: t + 0.004, dur: 0.09, peak: 0.34, type: 'bandpass', freq: 900, q: 0.7, sweep: 260, a: 0.0006, r: 0.07 });
+
+    // Thump: the low end you feel more than hear.
+    this._tone({ t0: t, freq: 128, type: 'sine', dur: 0.19, peak: 0.5, glide: 38, a: 0.0008, r: 0.13 });
+    this._tone({ t0: t + 0.006, freq: 62, type: 'sine', dur: 0.24, peak: 0.34, glide: 30, a: 0.002, r: 0.18 });
+
+    // Tail: the report bouncing off the walls.
+    this._noise({ t0: t + 0.05, dur: 0.42, peak: 0.10, type: 'lowpass', freq: 1500, sweep: 260, a: 0.02, r: 0.36 });
+    this._noise({ t0: t + 0.14, dur: 0.34, peak: 0.045, type: 'bandpass', freq: 700, q: 1.1, a: 0.05, r: 0.3 });
   }
 
   // Badge leaves the hand: a whoosh, then metal on wood.

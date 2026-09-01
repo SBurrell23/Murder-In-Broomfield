@@ -28,6 +28,7 @@ function boot() {
   startRain();
   startStreet();
   restoreName();
+  onScreenChange(placeUtils);
 
   // Audio can only start after a gesture, so arm it on the first interaction.
   const unlock = () => {
@@ -395,6 +396,21 @@ function startStreet() {
     if (document.hidden) street.stop();
     else if (streetShouldRun()) street.start();
   });
+}
+
+// The sound and rules buttons float top-right everywhere except the game
+// board, where they belong in the banner rather than hovering over the tiles.
+function placeUtils(screen) {
+  const bar = $('.util-bar');
+  const slot = $('#head-utils');
+  if (!bar || !slot) return;
+  if (screen === 'game') {
+    if (bar.parentElement !== slot) slot.append(bar);
+    bar.classList.add('in-head');
+  } else {
+    if (bar.parentElement !== document.body) document.body.append(bar);
+    bar.classList.remove('in-head');
+  }
 }
 
 function streetShouldRun() {

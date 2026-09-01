@@ -173,7 +173,9 @@ function showPreview(item, kind, anchor) {
   // If a photograph is in use for this card, preview that instead.
   const src = manifestSource(item, kind);
   if (photosEnabled() && src) img.src = src;
-  box.append(img, el('span.card-preview-name', { text: item.name }));
+  // Art only. The name is already printed on the card, so repeating it here
+  // just covered the illustration.
+  box.append(img);
 
   // Sit beside the card, flipped or nudged to stay on screen.
   const r = anchor.getBoundingClientRect();

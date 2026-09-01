@@ -65,6 +65,7 @@ export function initGameUI(context) { ctx = context; }
 export function resetGameUI() {
   lastPhase = null;
   dealt = false;
+  lastTileIds.clear();
   accuse = { suspectId: null, meansId: null, clueId: null };
   stopClock();
 }
@@ -299,13 +300,25 @@ function renderHead(view) {
   $('#round-num').textContent = view.round;
   $('#phase-line').textContent = phaseLine(view);
 
+  // The Forensic Scientist is named for everyone, always - they hold the file
+  // and everyone needs to know who to watch. Your own role sits beside it.
   const chip = $('#you-chip');
   clear(chip);
   const role = view.you.role;
-  chip.append(
-    el('span.role-name', { class: 'role-' + role, text: ROLE_COPY[role].title }),
-    el('span.you-name', { text: view.you.name })
-  );
+  const sci = view.players.find(p => p.id === view.scientistId);
+
+  // When you are the scientist the two chips would say the same thing twice.
+  if (role !== 'scientist') {
+    chip.append(el('span.chip-part', null,
+      el('span.chip-label', { text: 'You' }),
+      el('span.role-name', { class: 'role-' + role, text: ROLE_COPY[role].title })));
+  }
+
+  chip.append(el('span.chip-part.chip-sci', null,
+    el('span.chip-label', { text: 'Forensic Scientist' }),
+    el('span.role-name.role-scientist', {
+      text: (sci ? sci.name : '-') + (role === 'scientist' ? ' - You' : '')
+    })));
 }
 
 function phaseLine(view) {
@@ -331,6 +344,17 @@ function phaseLine(view) {
     default:
       return 'The floor is open. Talk it through.';
   }
+}
+
+// A scene tile should flip once, when it is actually swapped. Keying off the
+// REPLACING phase re-ran the flip on every later render - including when the
+// scientist placed the new tile's bullet, so it flipped a second time.
+const lastTileIds = new Map();
+function justSwapped(entry) {
+  if (entry.target !== 'scene') return false;
+  const prev = lastTileIds.get(entry.slot);
+  lastTileIds.set(entry.slot, entry.tileId);
+  return prev !== undefined && prev !== entry.tileId;
 }
 
 function renderBoard(view) {
@@ -361,15 +385,14 @@ function renderBoard(view) {
         canMark ? 'is-live' : '',
         canMark && entry.bullet === null ? 'needs-bullet' : '',
         canPickForSwap ? 'is-selectable' : '',
-        (view.phase === PHASE.REPLACING && entry.slot === view.replacingSlot) ? 'is-replacing' : ''
+        justSwapped(entry) ? 'is-replacing' : ''
       ].filter(Boolean).join(' '),
       'data-tile': entry.key
     });
 
     node.append(el('div.tile-head', null,
       el('div', null,
-        el('div.tile-title', { text: tile.title }),
-        tile.subtitle ? el('div.tile-sub', { text: tile.subtitle }) : null),
+        el('div.tile-title', { text: tile.title })),
       el('span.tile-kind')));
 
     const list = el('ul.tile-options');
@@ -407,27 +430,16 @@ function renderBoard(view) {
 
 function renderTable(view) {
   const host = $('#table');
-  const mine = $('#you-seat');
   clear(host);
-  clear(mine);
 
   const pending = view.pendingAccusation;
 
-  // Your own seat lives in the side rail where it is always to hand; everyone
-  // else sits under the board.
+  // Every hand sits under the board together, yours included and marked as
+  // such. The Forensic Scientist holds no cards and is named in the header, so
+  // they get no seat here.
   for (const p of view.players) {
-    const target = p.id === view.you.id ? mine : host;
-    if (p.isScientist) {
-      target.append(el('div.seat-card.is-scientist', {
-        class: [p.id === view.you.id ? 'is-you' : '',
-                p.connected === false ? 'is-offline' : ''].filter(Boolean).join(' ')
-      },
-        el('div.seat-card-head', null,
-          el('span.seat-card-name', { text: p.name }),
-          el('span.seat-flags', null, el('span.badge-pip', { text: 'Forensics' }))),
-        el('p.action-note', { text: 'Holds the file. Speaks only in bullets.' })));
-      continue;
-    }
+    const target = host;
+    if (p.isScientist) continue;
 
     const isSuspect = pending && pending.suspectId === p.id;
     const offline = p.connected === false;
@@ -444,8 +456,16 @@ function renderTable(view) {
       text: p.badge === 'spent' ? 'Badge Spent' : 'Badge'
     }));
 
+    const isYou = p.id === view.you.id;
+    if (isYou) {
+      // Only ever rendered in your own view, so this reveals nothing.
+      flags.prepend(el('span.badge-pip.pip-role', {
+        class: 'role-' + view.you.role,
+        text: ROLE_COPY[view.you.role].title
+      }));
+    }
     card.append(el('div.seat-card-head', null,
-      el('span.seat-card-name', { text: p.name + (p.id === view.you.id ? ' (you)' : '') }),
+      el('span.seat-card-name', { text: p.name + (isYou ? ' - You' : '') }),
       flags));
 
     // Both hands are public - that is the whole puzzle. Means carry an orange
@@ -466,7 +486,6 @@ function renderTable(view) {
     target.append(card);
   }
 
-  $('#you-block').hidden = !mine.children.length;
   dealt = true;
 }
 
