@@ -32,7 +32,8 @@ code chip copies an invite link). Everyone else presses **Join A Case**. With
 four to six players seated, the host begins.
 
 The host can pin a specific player as Forensic Scientist or leave it to chance,
-and at six players can enable the **Accomplice & Witness** pair.
+set the **round timer** (ten minutes by default, or off), and at six players can
+enable the **Accomplice & Witness** pair.
 
 ### Roles
 
@@ -50,9 +51,13 @@ and at six players can enable the **Accomplice & Witness** pair.
    Evidence from their own face-up hand. Each player then reads a private
    dossier containing only what their role is entitled to know.
 2. **Setup.** The Scientist places one bullet marker on the Cause of Death tile,
-   one on the Location of Crime tile, and one on each of four Scene Tiles.
-3. **Rounds.** The table argues. At the end of a round the Scientist swaps one
-   Scene Tile for a fresh one and marks it. That happens twice, so three rounds.
+   one on the Location of Crime tile, and one on each of four Scene Tiles. The
+   Cause of Death tile is fixed for every game — Suffocation, Severe Injury,
+   Blood Loss, Illness/Disease, Poisoning, Accident.
+3. **Rounds.** The table argues, against the round clock if one is set. At the
+   end of a round the Scientist swaps one Scene Tile for a fresh one and marks
+   it. That happens twice, so three rounds. The clock is purely advisory: it
+   restarts each round, and at zero it beeps and nothing else happens.
 4. **Badges.** Every player except the Scientist carries exactly one badge and
    may throw it at any moment — the Murderer included, and bluffing with it is
    often the right move. A badge names a suspect, a weapon and a piece of
@@ -136,7 +141,7 @@ or `assets/audio/main-game-music.mp3` (in game).
 index.html            screens, modals and the effect stage
 css/                  main (theme, shell) · game (board) · animations
 js/
-  data/               means (100) · clues (100) · tiles (6 cause, 5 location, 20 scene)
+  data/               means (100) · clues (100) · tiles (1 fixed cause, 5 location, 20 scene)
   game/rules.js       authoritative rules engine — pure, no DOM, no network
   net/net.js          PeerJS transport, plus an in-process loopback for tests
   net/room.js         Host (authority) and Client (view consumer)

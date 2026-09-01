@@ -50,7 +50,8 @@ export class Game {
       players,                 // [{id, name}]
       seed,
       scientistId = null,      // pre-chosen in lobby, or null to randomize
-      useAccompliceWitness = false
+      useAccompliceWitness = false,
+      timerSeconds = 0         // 0 disables the round clock entirely
     } = config;
 
     if (players.length < MIN_PLAYERS || players.length > MAX_PLAYERS) {
@@ -68,6 +69,12 @@ export class Game {
     this.pendingAccusation = null;
     this.lastChanceGuess = null;
     this.replacingSlot = null;
+
+    // A per-round advisory clock. It never changes the game state - at zero it
+    // simply stops, and the clients beep. Stored as an absolute deadline so
+    // every client counts down to the same moment.
+    this.timerSeconds = Math.max(0, Math.floor(timerSeconds));
+    this.timerEndsAt = null;
 
     this._assignRoles(players, scientistId, useAccompliceWitness);
     this._dealHands();
@@ -232,6 +239,7 @@ export class Game {
     if (!this._allBulletsPlaced()) return { ok: false, error: 'Every tile needs a bullet' };
     this.phase = PHASE.ROUND;
     this.round = 1;
+    this._startTimer();
     this._log('system', 'Round 1 begins. The floor is open.');
     return { ok: true };
   }
@@ -338,6 +346,7 @@ export class Game {
       this._end('murderer', 'Three rounds gone. The trail is cold.');
     } else {
       this.phase = PHASE.ROUND;
+      this._startTimer();
       this._log('system', `Round ${this.round} begins.`);
     }
     return { ok: true };
@@ -360,7 +369,12 @@ export class Game {
     return { ok: true, correct: this.lastChanceGuess.correct };
   }
 
+  _startTimer() {
+    this.timerEndsAt = this.timerSeconds > 0 ? Date.now() + this.timerSeconds * 1000 : null;
+  }
+
   _end(winner, reason) {
+    this.timerEndsAt = null;
     this.phase = PHASE.OVER;
     this.winner = winner;
     this.winReason = reason;
@@ -378,6 +392,11 @@ export class Game {
       maxRounds: MAX_ROUNDS,
       replacementsUsed: this.replacementsUsed,
       replacingSlot: this.replacingSlot ?? null,
+      timerSeconds: this.timerSeconds,
+      timerEndsAt: this.timerEndsAt,
+      // Clients subtract this from their own clock to correct for skew, so
+      // everyone's countdown reaches zero at the same real moment.
+      now: Date.now(),
       sceneDeckLeft: this.sceneDeck.length,
       scientistId: this.scientistId,
       winner: this.winner,

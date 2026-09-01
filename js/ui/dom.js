@@ -35,12 +35,22 @@ export function clear(node) { while (node.firstChild) node.removeChild(node.firs
 // ------------------------------------------------------------- screens ---
 
 let currentScreen = 'title';
+const screenWatchers = new Set();
+
+/** Subscribe to screen changes; returns an unsubscribe function. */
+export function onScreenChange(fn) {
+  screenWatchers.add(fn);
+  return () => screenWatchers.delete(fn);
+}
 
 export function showScreen(name) {
   if (currentScreen === name) return;
   currentScreen = name;
   $$('.screen').forEach(s => s.classList.toggle('is-active', s.id === 'screen-' + name));
   window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  screenWatchers.forEach(fn => {
+    try { fn(name); } catch (e) { console.error('[screen]', e); }
+  });
 }
 
 export function activeScreen() { return currentScreen; }

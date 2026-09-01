@@ -1,12 +1,13 @@
 // Application shell: title screen, lobby, session wiring and the sound panel.
 
-import { $, $$, el, clear, showScreen, toast, openModal, closeModal, wireModals } from './ui/dom.js';
+import { $, $$, el, clear, showScreen, activeScreen, onScreenChange, toast, openModal, closeModal, wireModals } from './ui/dom.js';
 import { PeerTransport, makeRoomCode } from './net/net.js';
 import { Host, Client } from './net/room.js';
 import { initGameUI, renderView, resetGameUI, playFx } from './ui/game-ui.js';
 import { loadImageManifest } from './ui/cards.js';
 import { audio } from './audio/sfx.js';
 import { music } from './audio/music.js';
+import { StreetScene } from './art/street.js';
 
 const MIN_PLAYERS = 4, MAX_PLAYERS = 6;
 
@@ -25,6 +26,7 @@ function boot() {
   wireTitle();
   wireLobby();
   startRain();
+  startStreet();
   restoreName();
 
   // Audio can only start after a gesture, so arm it on the first interaction.
@@ -213,7 +215,9 @@ function attachClient(client) {
   client.on('error', msg => { toast(msg, 'error'); audio.error(); });
   client.on('kicked', () => { toast('You were removed from the room.', 'error'); leaveSession(); });
   client.on('disconnected', () => {
-    toast('Lost the connection to the host.', 'error');
+    // The seat is held host-side and the token is in sessionStorage, so a
+    // reload and rejoin puts them straight back into the same game.
+    toast('Lost the connection. Reload and rejoin to take your seat back.', 'error', 9000);
     audio.error();
   });
   client.on('neterror', e => { if (e && e.type !== 'peer-unavailable') toast('Network trouble.', 'error'); });
@@ -255,6 +259,9 @@ function wireLobby() {
   });
   $('#toggle-aw').addEventListener('change', e => {
     if (session && session.isHost) session.host.setSettings({ useAccompliceWitness: e.target.checked });
+  });
+  $('#select-timer').addEventListener('change', e => {
+    if (session && session.isHost) session.host.setSettings({ timerMinutes: Number(e.target.value) });
   });
 }
 
@@ -321,6 +328,9 @@ function renderLobby() {
     aw.checked = !!lobbyState.settings.useAccompliceWitness;
     aw.disabled = n < 6;
 
+    const tm = $('#select-timer');
+    tm.value = String(lobbyState.settings.timerMinutes ?? 10);
+
     const start = $('#btn-start');
     start.disabled = !session.host.canStart();
     start.textContent = n < MIN_PLAYERS ? `Need ${MIN_PLAYERS} Players` : 'Begin The Case';
@@ -365,6 +375,43 @@ function wireAudioPanel() {
   mute.addEventListener('change', () => { audio.init(); audio.set('muted', mute.checked); });
 
   $('#btn-test-sfx').addEventListener('click', () => { audio.init(); audio.resume(); audio.bulletPlace(); });
+}
+
+// ============================================================ street =====
+
+// The street vignette belongs to the title and lobby only; once a case is
+// underway the board needs the attention and the cycles.
+let street = null;
+
+function startStreet() {
+  const canvas = $('#street');
+  if (!canvas) return;
+  street = new StreetScene(canvas);
+  street.start();
+  onScreenChange(syncStreet);
+
+  document.addEventListener('visibilitychange', () => {
+    if (!street) return;
+    if (document.hidden) street.stop();
+    else if (streetShouldRun()) street.start();
+  });
+}
+
+function streetShouldRun() {
+  return activeScreen() === 'title' || activeScreen() === 'lobby';
+}
+
+function syncStreet() {
+  const canvas = $('#street');
+  if (!street || !canvas) return;
+  if (streetShouldRun()) {
+    canvas.classList.remove('is-off');
+    street.start();
+  } else {
+    canvas.classList.add('is-off');
+    // Let the fade finish before dropping the frame loop.
+    setTimeout(() => { if (!streetShouldRun()) street.stop(); }, 1200);
+  }
 }
 
 // ============================================================== rain =====

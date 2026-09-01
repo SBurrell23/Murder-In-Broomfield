@@ -20,7 +20,8 @@ function playGame(seed, nPlayers, useAW, style) {
   const rng = makeRng(seed);
   const players = mkPlayers(nPlayers);
   const pickScientist = rng() < 0.5 ? players[Math.floor(rng() * nPlayers)].id : null;
-  const g = new Game({ players, seed, scientistId: pickScientist, useAccompliceWitness: useAW });
+  const timerSeconds = seed % 3 === 0 ? 0 : 600;   // exercise both on and off
+  const g = new Game({ players, seed, scientistId: pickScientist, useAccompliceWitness: useAW, timerSeconds });
 
   if (pickScientist) ok(g.scientistId === pickScientist, 'lobby-chosen scientist honoured');
 
@@ -106,8 +107,22 @@ function playGame(seed, nPlayers, useAW, style) {
   for (const s of g.tiles.scenes) {
     g.dispatch(g.scientistId, { type: 'placeBullet', target: 'scene', slot: s.slot, index: Math.floor(rng() * 6) });
   }
+  ok(g.timerEndsAt === null, 'clock does not run before the case opens');
   ok(g.dispatch(g.scientistId, { type: 'confirmSetup' }).ok, 'setup confirms once complete');
   ok(g.phase === PHASE.ROUND && g.round === 1, 'round 1 live');
+
+  // The clock starts only once every bullet is down and the case is opened.
+  if (timerSeconds) {
+    ok(g.timerEndsAt !== null, 'clock starts when the case opens');
+    const left = g.timerEndsAt - Date.now();
+    ok(left > (timerSeconds - 5) * 1000 && left <= timerSeconds * 1000, 'clock starts at the configured length');
+    ok(g.publicState().timerSeconds === timerSeconds, 'clock length is published');
+    ok(typeof g.publicState().now === 'number', 'host clock reading is published for skew correction');
+  } else {
+    ok(g.timerEndsAt === null, 'no clock when the timer is disabled');
+    ok(g.publicState().timerEndsAt === null, 'disabled clock publishes no deadline');
+  }
+  let lastDeadline = g.timerEndsAt;
 
   // --- rounds -----------------------------------------------------------
   let guard = 0;
@@ -189,10 +204,23 @@ function playGame(seed, nPlayers, useAW, style) {
         'old tiles are locked during a replacement');
     }
     g.dispatch(g.scientistId, { type: 'placeBullet', target: 'scene', slot, index: Math.floor(rng() * 6) });
+    const roundBefore = g.round;
     ok(g.dispatch(g.scientistId, { type: 'confirmReplacement' }).ok, 'replacement confirms');
+    // Each new round gets a full clock. (The soak test finishes rounds inside a
+    // single millisecond, so compare remaining time rather than the deadline
+    // value, which can legitimately repeat.)
+    if (timerSeconds && g.round > roundBefore && g.phase === PHASE.ROUND) {
+      const remaining = g.timerEndsAt - Date.now();
+      ok(g.timerEndsAt !== null, 'clock is running in the new round');
+      ok(remaining > (timerSeconds - 5) * 1000 && remaining <= timerSeconds * 1000,
+        'new round starts with a full clock');
+      ok(g.timerEndsAt >= lastDeadline, 'clock deadline never moves backwards');
+      lastDeadline = g.timerEndsAt;
+    }
   }
 
   ok(g.phase === PHASE.OVER, `game reached a terminal state (guard=${guard})`);
+  ok(g.timerEndsAt === null, 'clock is cleared once the case closes');
   ok(g.winner === 'investigators' || g.winner === 'murderer', 'a side won');
   ok(g.round <= MAX_ROUNDS + 1, 'round counter stayed in range');
 

@@ -20,6 +20,7 @@
 <div class="atmosphere" aria-hidden="true">
   <div class="fog fog-a"></div>
   <div class="fog fog-b"></div>
+  <canvas id="street"></canvas>
   <canvas id="rain"></canvas>
   <div class="vignette"></div>
   <div class="grain"></div>
@@ -93,6 +94,16 @@
             <option value="">Chosen at random</option>
           </select>
         </div>
+        <div class="setting-row">
+          <label for="select-timer">Round Timer</label>
+          <select id="select-timer">
+            <option value="0">No timer</option>
+            <option value="5">5 minutes per round</option>
+            <option value="10" selected>10 minutes per round</option>
+            <option value="15">15 minutes per round</option>
+            <option value="20">20 minutes per round</option>
+          </select>
+        </div>
         <label class="switch-row" for="toggle-aw">
           <input type="checkbox" id="toggle-aw">
           <span class="switch"></span>
@@ -125,6 +136,10 @@
           <span class="round-label">Round</span>
           <span class="round-num" id="round-num">1</span>
           <span class="round-of">of 3</span>
+        </div>
+        <div class="round-clock" id="round-clock" hidden>
+          <span class="clock-label">Time</span>
+          <span class="clock-value" id="clock-value">--:--</span>
         </div>
         <div class="phase-line" id="phase-line">The case is open.</div>
         <div class="you-chip" id="you-chip"></div>
@@ -210,7 +225,11 @@
 
       <h3>The Rounds</h3>
       <p>The Scientist places one bullet on the <strong>Cause of Death</strong> tile, one on the <strong>Location of Crime</strong> tile, and one on each of four <strong>Scene Tiles</strong>. Then the table talks.</p>
+      <p>The Cause of Death tile is the same every game &mdash; Suffocation, Severe Injury, Blood Loss, Illness/Disease, Poisoning, Accident &mdash; so the table learns to read it at a glance.</p>
       <p>At the end of a round the Scientist swaps one scene tile for a fresh one and marks it. This happens twice, giving three rounds in all.</p>
+
+      <h3>The Clock</h3>
+      <p>The host can set a round timer in the lobby, ten minutes by default. It starts once the opening bullets are down and restarts with each new round. Reaching zero changes nothing at all &mdash; it simply beeps, to tell the table it is time to move on.</p>
 
       <h3>The Badge</h3>
       <p>Every player except the Scientist carries one badge and may throw it at any moment &mdash; the murderer included, which is often the point. A badge names a suspect, a weapon and a piece of evidence. All three must be right. The Scientist rules on it, and a spent badge is gone for good.</p>

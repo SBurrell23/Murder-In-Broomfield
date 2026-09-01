@@ -19,8 +19,16 @@ export const MSG = {
   START: 'start',
   RESTART: 'restart',
   KICK: 'kick',
-  BYE: 'bye'
+  BYE: 'bye',
+  PING: 'ping',
+  PONG: 'pong'
 };
+
+// A closed browser tab does not reliably produce a WebRTC 'close' event - the
+// channel can sit half-open for tens of seconds. Clients therefore announce
+// themselves on an interval and the host retires anyone who goes quiet.
+export const HEARTBEAT_MS = 3000;
+export const SILENCE_MS = 10000;
 
 const PEER_PREFIX = 'murder-in-broomfield-';
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1

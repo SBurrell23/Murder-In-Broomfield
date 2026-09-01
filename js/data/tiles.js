@@ -5,19 +5,11 @@
 //   kind: 'place'  - Location of Crime (steel blue, always in play)
 //   kind: 'scene'  - Scene Tile        (orange, four in play, two get replaced)
 
+// The Cause of Death tile is fixed: the same six options in every game, so the
+// table learns to read it the way they would a real board.
 export const CAUSE_OF_DEATH = [
   { id: 'CD1', kind: 'cause', title: 'Cause of Death', options:
-    ['Bleeding to Death', 'Suffocation', 'Poisoning', 'Blunt Force Trauma', 'Sharp Force Trauma', 'Drowning'] },
-  { id: 'CD2', kind: 'cause', title: 'Cause of Death', options:
-    ['Broken Neck', 'Organ Failure', 'Massive Burns', 'Hypothermia', 'Electrocution', 'Fatal Fall'] },
-  { id: 'CD3', kind: 'cause', title: 'Cause of Death', options:
-    ['Head Injury', 'Throat Injury', 'Chest Injury', 'Abdominal Injury', 'Spinal Injury', 'Multiple Injuries'] },
-  { id: 'CD4', kind: 'cause', title: 'Cause of Death', options:
-    ['Death Was Instant', 'Death Took Minutes', 'Death Took Hours', 'Death Took Days', 'Died in Their Sleep', 'Died Mid-Struggle'] },
-  { id: 'CD5', kind: 'cause', title: 'Cause of Death', options:
-    ['Staged as an Accident', 'Staged as a Suicide', 'Staged as Natural Causes', 'Staged as a Robbery', 'Staged as a Ritual', 'Not Staged at All'] },
-  { id: 'CD6', kind: 'cause', title: 'Cause of Death', options:
-    ['Struck From Behind', 'Killed Face to Face', 'Killed While Fleeing', 'Killed While Asleep', 'Killed While Restrained', 'Killed From a Distance'] }
+    ['Suffocation', 'Severe Injury', 'Blood Loss', 'Illness/Disease', 'Poisoning', 'Accident'] }
 ];
 
 export const LOCATIONS = [

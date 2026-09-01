@@ -262,6 +262,23 @@ class AudioEngine {
     this._noise({ dur: 0.03, peak: 0.09, type: 'bandpass', freq: 2600, q: 1.6, a: 0.001, r: 0.02 });
   }
 
+  // Time is up on a round. Deliberately a plain, unmistakable station beep -
+  // it is a nudge to move on, not a dramatic beat.
+  timeUp() {
+    if (!this.ctx) return;
+    const t = this._now();
+    for (let i = 0; i < 3; i++) {
+      this._tone({ t0: t + i * 0.34, freq: 880, type: 'square', dur: 0.16, peak: 0.2, a: 0.004, r: 0.1 });
+      this._tone({ t0: t + i * 0.34, freq: 1320, type: 'sine', dur: 0.16, peak: 0.1, a: 0.004, r: 0.1 });
+    }
+  }
+
+  // Quiet pip for the final countdown seconds.
+  clockTick() {
+    if (!this.ctx) return;
+    this._tone({ freq: 1200, type: 'sine', dur: 0.05, peak: 0.06, a: 0.002, r: 0.04 });
+  }
+
   reveal() {
     if (!this.ctx) return;
     const t = this._now();

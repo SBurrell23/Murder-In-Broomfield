@@ -5,7 +5,7 @@
 // views. A malicious client can ask for anything; it only ever receives what its
 // own seat is entitled to see.
 
-import { Emitter, MSG, makeRoomCode } from './net.js';
+import { Emitter, MSG, makeRoomCode, HEARTBEAT_MS, SILENCE_MS } from './net.js';
 import { Game, PHASE, MIN_PLAYERS, MAX_PLAYERS } from '../game/rules.js';
 import { randomSeed } from '../util/rng.js';
 
@@ -24,7 +24,7 @@ export class Host extends Emitter {
     this.t = transport;
     this.code = null;
     this.game = null;
-    this.settings = { scientistId: null, useAccompliceWitness: false };
+    this.settings = { scientistId: null, useAccompliceWitness: false, timerMinutes: 10 };
 
     // seat.id is the stable player id; peerId is whatever connection currently
     // owns it, so a reconnecting player can reclaim their seat.
@@ -44,7 +44,46 @@ export class Host extends Emitter {
     this.t.on('peer:close', peerId => this._onPeerClose(peerId));
   }
 
+  _ping(peerId) {
+    const seat = this.seatByPeer(peerId);
+    if (!seat) return;
+    seat.lastSeen = Date.now();
+    if (!seat.connected) {
+      // They were written off but are evidently still here.
+      seat.connected = true;
+      this._pushLobby();
+      if (this.game) this._pushViews();
+    }
+    this.t.sendTo(peerId, { t: MSG.PONG });
+  }
+
+  // Retire seats that have stopped announcing themselves.
+  _sweep() {
+    const now = Date.now();
+    let changed = false;
+    for (const seat of this.seats) {
+      if (seat.isHost || !seat.connected || !seat.peerId) continue;
+      if (seat.lastSeen && now - seat.lastSeen > SILENCE_MS) {
+        seat.connected = false;
+        seat.peerId = null;
+        changed = true;
+        this.emit('leave', seat);
+      }
+    }
+    if (!changed) return;
+    if (!this.game) {
+      this.seats = this.seats.filter(s => s.connected || s.isHost);
+      if (this.settings.scientistId && !this.seat(this.settings.scientistId)) {
+        this.settings.scientistId = null;
+      }
+    }
+    this._pushLobby();
+    if (this.game) this._pushViews();
+  }
+
   async open(code = makeRoomCode()) {
+    this._sweepTimer = setInterval(() => this._sweep(), 2000);
+    this._sweepTimer.unref?.();
     this.code = await this.t.host(code);
     this.emit('open', this.code);
     this._pushLobby();
@@ -63,6 +102,7 @@ export class Host extends Emitter {
     switch (msg.t) {
       case MSG.HELLO:   return this._hello(peerId, msg);
       case MSG.ACTION:  return this._action(peerId, msg);
+      case MSG.PING:    return this._ping(peerId);
       default:
         // Lobby settings and start/restart are host-UI only; a client asking
         // for them is ignored rather than trusted.
@@ -77,6 +117,7 @@ export class Host extends Emitter {
       if (seat) {
         seat.peerId = peerId;
         seat.connected = true;
+        seat.lastSeen = Date.now();
         this._welcome(peerId, seat);
         this._pushLobby();
         this._pushViews();
@@ -94,6 +135,7 @@ export class Host extends Emitter {
     const seat = {
       id: 'seat-' + Math.random().toString(36).slice(2, 10),
       name, peerId, isHost: false, connected: true,
+      lastSeen: Date.now(),
       token: 'tok-' + Math.random().toString(36).slice(2, 12)
     };
     this.seats.push(seat);
@@ -131,6 +173,9 @@ export class Host extends Emitter {
       if (this.settings.scientistId === seat.id) this.settings.scientistId = null;
     }
     this._pushLobby();
+    // Mid-game the seat is held rather than freed, so the remaining players
+    // still need a fresh view to see that someone has dropped.
+    if (this.game) this._pushViews();
     this.emit('leave', seat);
   }
 
@@ -174,7 +219,8 @@ export class Host extends Emitter {
       players: this.seats.map(s => ({ id: s.id, name: s.name })),
       seed,
       scientistId: this.settings.scientistId,
-      useAccompliceWitness: this.settings.useAccompliceWitness
+      useAccompliceWitness: this.settings.useAccompliceWitness,
+      timerSeconds: Math.max(0, Number(this.settings.timerMinutes) || 0) * 60
     });
     this.emit('started', this.game);
     this._pushViews();
@@ -281,12 +327,26 @@ export class Host extends Emitter {
     for (const seat of this.seats) {
       const view = this.game.viewFor(seat.id);
       if (!view) continue;
+      this._annotateConnections(view);
       if (seat.isHost) this.emit('view', view);
       else if (seat.peerId) this.t.sendTo(seat.peerId, { t: MSG.VIEW, seq, view });
     }
   }
 
-  destroy() { this.t.destroy(); }
+  // Whether a player is still on the line is a transport fact, not a rules
+  // fact, so the host stamps it on the way out. The table needs to see who
+  // dropped - a silent player and an absent one are very different things.
+  _annotateConnections(view) {
+    for (const p of view.players) {
+      const seat = this.seat(p.id);
+      p.connected = seat ? seat.connected : false;
+    }
+  }
+
+  destroy() {
+    clearInterval(this._hbTimer);
+    this.t.destroy();
+  }
 }
 
 // ---------------------------------------------------------------- CLIENT ---
@@ -305,6 +365,8 @@ export class Client extends Emitter {
     this.lobby = null;
     this.view = null;
     this.seq = 0;   // highest state sequence applied so far
+    this.lastHostMsg = Date.now();
+    this._alive = true;
 
     this.t.on('open', () => this._sayHello());
     this.t.on('data', msg => this._onData(msg));
@@ -321,6 +383,7 @@ export class Client extends Emitter {
     await this.t.join(code);
     // LoopbackTransport emits 'open' asynchronously; PeerTransport already has.
     this._sayHello();
+    this._startHeartbeat();
   }
 
   _sayHello() {
@@ -329,8 +392,27 @@ export class Client extends Emitter {
     this.t.sendToHost({ t: MSG.HELLO, name: this.name, token: this.token || undefined });
   }
 
+  // Announce ourselves so the host can tell a closed tab from a quiet player,
+  // and watch for the host going silent in the other direction.
+  _startHeartbeat() {
+    clearInterval(this._hbTimer);
+    this.lastHostMsg = Date.now();
+    this._hbTimer = setInterval(() => {
+      this.t.sendToHost({ t: MSG.PING });
+      if (this._alive && Date.now() - this.lastHostMsg > SILENCE_MS + HEARTBEAT_MS) {
+        this._alive = false;
+        this.emit('disconnected');
+      }
+    }, HEARTBEAT_MS);
+    this._hbTimer.unref?.();   // no-op in browsers; lets the test runner exit
+  }
+
   _onData(msg) {
     if (!msg || typeof msg !== 'object') return;
+    // Any inbound traffic proves the host is still there.
+    this.lastHostMsg = Date.now();
+    if (!this._alive) { this._alive = true; this.emit('reconnected'); }
+    if (msg.t === MSG.PONG) return;
     switch (msg.t) {
       case MSG.WELCOME:
         this.youId = msg.youId;
@@ -376,5 +458,8 @@ export class Client extends Emitter {
     this.t.sendToHost({ t: MSG.ACTION, action });
   }
 
-  destroy() { this.t.destroy(); }
+  destroy() {
+    clearInterval(this._hbTimer);
+    this.t.destroy();
+  }
 }

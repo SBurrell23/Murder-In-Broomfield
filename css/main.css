@@ -89,6 +89,15 @@ a { color: var(--brass); }
 .fog-a { top: 8%;  animation: drift-a 62s linear infinite; }
 .fog-b { bottom: 2%; animation: drift-b 84s linear infinite; opacity: .8; }
 
+/* The street sits behind the rain and well behind the type. Kept dim on
+   purpose - it should reward a second look, not compete with the title. */
+#street {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: .92;
+  transition: opacity 1.1s var(--ease);
+}
+#street.is-off { opacity: 0; }
+
 #rain { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .3; }
 
 .vignette {
@@ -106,6 +115,7 @@ a { color: var(--brass); }
 @media (prefers-reduced-motion: reduce) {
   .fog, .grain { animation: none; }
   #rain { display: none; }
+  /* The street plate still renders; only its animation is suppressed in JS. */
 }
 
 /* ---------------------------------------------------------- screens ---- */

@@ -51,8 +51,17 @@ let ctx = null;          // { act, youId }
 let lastPhase = null;
 let accuse = { suspectId: null, meansId: null, clueId: null };
 
+// Round clock. The host sends an absolute deadline plus its own clock reading;
+// we hold the skew so every table counts down to the same real moment. The
+// clock is advisory - reaching zero changes nothing but the sound.
+const clock = { endsAt: null, skew: 0, timer: null, beeped: false, lastPip: null };
+
 export function initGameUI(context) { ctx = context; }
-export function resetGameUI() { lastPhase = null; accuse = { suspectId: null, meansId: null, clueId: null }; }
+export function resetGameUI() {
+  lastPhase = null;
+  accuse = { suspectId: null, meansId: null, clueId: null };
+  stopClock();
+}
 
 const act = a => ctx && ctx.act(a);
 
@@ -62,9 +71,11 @@ export function renderView(view) {
   if (!view) return;
 
   if (view.phase === PHASE.NIGHT_MURDERER || view.phase === PHASE.NIGHT_REVIEW) {
+    stopClock();
     showScreen('night');
     renderNight(view);
   } else if (view.phase === PHASE.OVER) {
+    stopClock();
     showScreen('over');
     renderOver(view);
   } else {
@@ -72,6 +83,66 @@ export function renderView(view) {
     renderGame(view);
   }
   lastPhase = view.phase;
+}
+
+// =============================================================== clock ===
+
+function stopClock() {
+  clearInterval(clock.timer);
+  clock.timer = null;
+  clock.endsAt = null;
+  clock.beeped = false;
+  clock.lastPip = null;
+  const box = $('#round-clock');
+  if (box) { box.hidden = true; box.className = 'round-clock'; }
+}
+
+function syncClock(view) {
+  const box = $('#round-clock');
+  if (!box) return;
+
+  if (!view.timerEndsAt || view.phase === PHASE.OVER) {
+    if (clock.endsAt !== null) stopClock();
+    else box.hidden = true;
+    return;
+  }
+
+  // Correct for the difference between the host's clock and ours.
+  if (typeof view.now === 'number') clock.skew = Date.now() - view.now;
+
+  if (clock.endsAt !== view.timerEndsAt) {
+    clock.endsAt = view.timerEndsAt;
+    clock.beeped = false;
+    clock.lastPip = null;
+  }
+  box.hidden = false;
+  if (!clock.timer) clock.timer = setInterval(paintClock, 250);
+  paintClock();
+}
+
+function paintClock() {
+  const box = $('#round-clock');
+  const out = $('#clock-value');
+  if (!box || !out || clock.endsAt === null) return;
+
+  const msLeft = clock.endsAt - (Date.now() - clock.skew);
+  const secs = Math.max(0, Math.ceil(msLeft / 1000));
+  const mm = Math.floor(secs / 60);
+  const ss = secs % 60;
+  out.textContent = `${mm}:${String(ss).padStart(2, '0')}`;
+
+  box.classList.toggle('is-low', secs > 0 && secs <= 60);
+  box.classList.toggle('is-done', secs === 0);
+
+  // A pip for each of the last five seconds, then the beep once at zero.
+  if (secs > 0 && secs <= 5 && clock.lastPip !== secs) {
+    clock.lastPip = secs;
+    audio.clockTick();
+  }
+  if (secs === 0 && !clock.beeped) {
+    clock.beeped = true;
+    audio.timeUp();
+  }
 }
 
 // =============================================================== night ===
@@ -186,6 +257,7 @@ function renderMurdererPicker(view) {
 // ================================================================ game ===
 
 function renderGame(view) {
+  syncClock(view);
   renderHead(view);
   renderBoard(view);
   renderTable(view);
@@ -312,7 +384,8 @@ function renderTable(view) {
   for (const p of view.players) {
     if (p.isScientist) {
       host.append(el('div.seat-card.is-scientist', {
-        class: p.id === view.you.id ? 'is-you' : ''
+        class: [p.id === view.you.id ? 'is-you' : '',
+                p.connected === false ? 'is-offline' : ''].filter(Boolean).join(' ')
       },
         el('div.seat-card-head', null,
           el('span.seat-card-name', { text: p.name }),
@@ -322,12 +395,15 @@ function renderTable(view) {
     }
 
     const isSuspect = pending && pending.suspectId === p.id;
+    const offline = p.connected === false;
     const card = el('div.seat-card', {
-      class: [p.id === view.you.id ? 'is-you' : '', isSuspect ? 'is-suspect' : ''].filter(Boolean).join(' '),
+      class: [p.id === view.you.id ? 'is-you' : '', isSuspect ? 'is-suspect' : '',
+              offline ? 'is-offline' : ''].filter(Boolean).join(' '),
       'data-seat': p.id
     });
 
     const flags = el('span.seat-flags');
+    if (offline) flags.append(el('span.badge-pip', { class: 'is-spent', text: 'Disconnected' }));
     flags.append(el('span.badge-pip', {
       class: p.badge === 'spent' ? 'is-spent' : '',
       text: p.badge === 'spent' ? 'Badge Spent' : 'Badge'

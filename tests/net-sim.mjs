@@ -192,6 +192,12 @@ async function scenario({ nClients, useAW, pickScientist, label }) {
     await settle(60);
     ok(host.seat(victimId) && !host.seat(victimId).connected, `${label}: dropped seat marked offline`);
     ok(host.seats.length === nClients + 1, `${label}: mid-game seat is held, not freed`);
+    // Remaining players must be told, or a dropped player looks merely quiet.
+    const survivor = clients.find(c => c !== victim && c.view);
+    ok(survivor && survivor.view.players.find(p => p.id === victimId)?.connected === false,
+      `${label}: other players see the drop in their view`);
+    ok(survivor && survivor.view.players.filter(p => p.connected === false).length === 1,
+      `${label}: only the dropped player is marked offline`);
 
     const t2 = new LoopbackTransport(hub, 'rejoin');
     const back = new Client(t2, { name: 'ignored', token: victimToken });
