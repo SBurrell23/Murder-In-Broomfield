@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Murder In Broomfield</title>
+<meta name="description" content="A social deduction case file for four to six players. One of you did it. One of you knows.">
+<meta name="theme-color" content="#0b0a0c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Special+Elite&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/game.css">
+<link rel="stylesheet" href="css/animations.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230b0a0c'/%3E%3Ccircle cx='13' cy='13' r='7' fill='none' stroke='%23c9a227' stroke-width='2.4'/%3E%3Cpath d='M18 18 L26 26' stroke='%23c9a227' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<!-- Atmosphere: fog, rain and the vignette sit behind every screen. -->
+<div class="atmosphere" aria-hidden="true">
+  <div class="fog fog-a"></div>
+  <div class="fog fog-b"></div>
+  <canvas id="rain"></canvas>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+</div>
+
+<!-- Persistent utility bar -->
+<div class="util-bar">
+  <button class="icon-btn" id="btn-sound" title="Sound settings" aria-label="Sound settings">
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </button>
+  <button class="icon-btn" id="btn-rules" title="How to play" aria-label="How to play">
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 4h9l5 5v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M14 4v5h5M8 13h8M8 17h6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+  </button>
+</div>
+
+<main id="app">
+
+  <!-- ============================ TITLE ============================ -->
+  <section class="screen screen-title is-active" id="screen-title">
+    <div class="title-wrap">
+      <p class="eyebrow">A Case File For Four To Six</p>
+      <h1 class="game-title">
+        <span class="line-1">Murder In</span>
+        <span class="line-2">Broomfield</span>
+      </h1>
+      <div class="title-rule"><span></span><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15l6 6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span></span></div>
+      <p class="tagline">One of you did it. One of you knows. The evidence does not lie &mdash; but everyone else might.</p>
+
+      <div class="name-field">
+        <label for="input-name">Your name</label>
+        <input id="input-name" type="text" maxlength="18" autocomplete="off" spellcheck="false" placeholder="Detective">
+      </div>
+
+      <div class="title-actions">
+        <button class="btn btn-primary" id="btn-host">Open A Case</button>
+        <button class="btn" id="btn-join-toggle">Join A Case</button>
+      </div>
+
+      <form class="join-row" id="join-row" hidden>
+        <label for="input-code" class="sr-only">Room code</label>
+        <input id="input-code" type="text" maxlength="4" autocomplete="off" spellcheck="false"
+               placeholder="CODE" aria-label="Room code" inputmode="text">
+        <button class="btn btn-primary" id="btn-join" type="submit">Enter</button>
+      </form>
+
+      <p class="net-status" id="title-status" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- ============================ LOBBY ============================ -->
+  <section class="screen screen-lobby" id="screen-lobby">
+    <div class="panel lobby-panel">
+      <header class="panel-head">
+        <h2>The Briefing Room</h2>
+        <div class="code-chip" id="code-chip" title="Click to copy the room code" role="button" tabindex="0">
+          <span class="code-label">Room</span>
+          <span class="code-value" id="code-value">&mdash;&mdash;&mdash;&mdash;</span>
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><rect x="9" y="9" width="11" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15 5H5a1 1 0 0 0-1 1v10" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        </div>
+      </header>
+
+      <p class="lobby-hint" id="lobby-hint">Waiting for detectives to arrive.</p>
+
+      <ul class="seat-list" id="seat-list"></ul>
+
+      <div class="lobby-settings" id="lobby-settings" hidden>
+        <h3>Case Settings</h3>
+        <div class="setting-row">
+          <label for="select-scientist">Forensic Scientist</label>
+          <select id="select-scientist">
+            <option value="">Chosen at random</option>
+          </select>
+        </div>
+        <label class="switch-row" for="toggle-aw">
+          <input type="checkbox" id="toggle-aw">
+          <span class="switch"></span>
+          <span class="switch-text">
+            <strong>Accomplice &amp; Witness</strong>
+            <em>Requires six players. Adds a partner for the murderer and a witness who saw two figures in the dark.</em>
+          </span>
+        </label>
+      </div>
+
+      <div class="lobby-actions">
+        <button class="btn btn-primary btn-lg" id="btn-start" disabled>Begin The Case</button>
+        <button class="btn btn-ghost" id="btn-leave">Leave</button>
+      </div>
+      <p class="net-status" id="lobby-status" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- ============================ NIGHT ============================ -->
+  <section class="screen screen-night" id="screen-night">
+    <div class="night-inner" id="night-inner"></div>
+  </section>
+
+  <!-- ============================ GAME ============================= -->
+  <section class="screen screen-game" id="screen-game">
+    <div class="game-grid">
+
+      <header class="game-head">
+        <div class="round-badge">
+          <span class="round-label">Round</span>
+          <span class="round-num" id="round-num">1</span>
+          <span class="round-of">of 3</span>
+        </div>
+        <div class="phase-line" id="phase-line">The case is open.</div>
+        <div class="you-chip" id="you-chip"></div>
+      </header>
+
+      <section class="board" id="board" aria-label="Scene tiles">
+        <div class="tile-row" id="tile-row"></div>
+      </section>
+
+      <section class="table" id="table" aria-label="Players and their cards"></section>
+
+      <aside class="side">
+        <div class="side-block">
+          <h3>Case Log</h3>
+          <ol class="log" id="log"></ol>
+        </div>
+        <div class="side-block" id="action-block">
+          <h3>Actions</h3>
+          <div class="action-stack" id="action-stack"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ========================== GAME OVER ========================== -->
+  <section class="screen screen-over" id="screen-over">
+    <div class="over-inner" id="over-inner"></div>
+  </section>
+
+</main>
+
+<!-- ============================ OVERLAYS ============================ -->
+
+<!-- Sound settings -->
+<div class="modal-back" id="modal-sound" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sound-title">
+    <button class="modal-x" data-close aria-label="Close">&times;</button>
+    <h2 id="sound-title">Sound</h2>
+    <div class="slider-row">
+      <label for="vol-master">Master</label>
+      <input type="range" id="vol-master" min="0" max="100" step="1">
+      <output id="out-master">90</output>
+    </div>
+    <div class="slider-row">
+      <label for="vol-music">Music</label>
+      <input type="range" id="vol-music" min="0" max="100" step="1">
+      <output id="out-music">45</output>
+    </div>
+    <div class="slider-row">
+      <label for="vol-sfx">Effects</label>
+      <input type="range" id="vol-sfx" min="0" max="100" step="1">
+      <output id="out-sfx">75</output>
+    </div>
+    <label class="switch-row" for="toggle-mute">
+      <input type="checkbox" id="toggle-mute">
+      <span class="switch"></span>
+      <span class="switch-text"><strong>Mute everything</strong></span>
+    </label>
+    <div class="modal-actions">
+      <button class="btn" id="btn-test-sfx">Test Effect</button>
+      <button class="btn btn-primary" data-close>Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rules -->
+<div class="modal-back" id="modal-rules" hidden>
+  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+    <button class="modal-x" data-close aria-label="Close">&times;</button>
+    <h2 id="rules-title">How The Case Works</h2>
+    <div class="rules-body">
+      <h3>The Table</h3>
+      <p>Everyone but the Forensic Scientist is dealt four <strong>Means of Murder</strong> and four pieces of <strong>Key Evidence</strong>, all face up. One of those players is the Murderer, and the weapon and the evidence they used are already sitting in plain sight.</p>
+
+      <h3>The Roles</h3>
+      <ul>
+        <li><strong>Forensic Scientist</strong> &mdash; knows everything, and may not speak. Communicates only by placing bullet markers on the scene tiles.</li>
+        <li><strong>Murderer</strong> &mdash; picks one weapon and one piece of evidence from their own hand, then talks their way out of it.</li>
+        <li><strong>Investigators</strong> &mdash; read the tiles, argue, and spend their badge when they think they have it.</li>
+        <li><strong>Accomplice</strong> &mdash; knows the murderer and exactly what they used. Wins with the murderer.</li>
+        <li><strong>Witness</strong> &mdash; saw two figures in the dark but cannot tell which was which. Wins with the investigators.</li>
+      </ul>
+
+      <h3>The Rounds</h3>
+      <p>The Scientist places one bullet on the <strong>Cause of Death</strong> tile, one on the <strong>Location of Crime</strong> tile, and one on each of four <strong>Scene Tiles</strong>. Then the table talks.</p>
+      <p>At the end of a round the Scientist swaps one scene tile for a fresh one and marks it. This happens twice, giving three rounds in all.</p>
+
+      <h3>The Badge</h3>
+      <p>Every player except the Scientist carries one badge and may throw it at any moment &mdash; the murderer included, which is often the point. A badge names a suspect, a weapon and a piece of evidence. All three must be right. The Scientist rules on it, and a spent badge is gone for good.</p>
+
+      <h3>Winning</h3>
+      <p>The investigators win the moment a badge lands on all three. If every badge is spent or three rounds pass, the murderer walks.</p>
+      <p>When a Witness is in play and a badge does land, the murderer&rsquo;s side gets one last swing: name the witness correctly and they take the case anyway.</p>
+
+      <h3>Talking</h3>
+      <p>This game is played out loud. Keep your voice chat open &mdash; the app only tracks the evidence.</p>
+    </div>
+    <div class="modal-actions"><button class="btn btn-primary" data-close>Close The File</button></div>
+  </div>
+</div>
+
+<!-- Badge accusation builder -->
+<div class="modal-back" id="modal-accuse" hidden>
+  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="accuse-title">
+    <button class="modal-x" data-close aria-label="Close">&times;</button>
+    <h2 id="accuse-title">Throw Your Badge</h2>
+    <p class="modal-sub">Name the suspect, the weapon, and the evidence. All three must be right, and you only get one.</p>
+    <div id="accuse-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-close>Think Again</button>
+      <button class="btn btn-danger" id="btn-accuse-confirm" disabled>Make The Accusation</button>
+    </div>
+  </div>
+</div>
+
+<!-- Full-screen effect stage for bullets, badges and verdicts -->
+<div class="fx-stage" id="fx-stage" aria-hidden="true"></div>
+<div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
