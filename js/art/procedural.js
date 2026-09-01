@@ -228,20 +228,51 @@ export function cardArtSVG(item, kind) {
   <g>${speckles}</g>
   <rect x="5" y="5" width="90" height="120" fill="none" stroke="${INK}" stroke-opacity=".55" stroke-width="0.9"/>
   <rect x="7.5" y="7.5" width="85" height="115" fill="none" stroke="${INK}" stroke-opacity=".28" stroke-width="0.4"/>
-  <g transform="translate(50 56) rotate(${rot}) scale(0.74) translate(-50 -50)">${glyph}</g>
-  <rect x="7.5" y="97" width="85" height="0.7" fill="${INK}" opacity=".4"/>
-  <text x="50" y="110" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="8.5"
-        fill="${INK}" letter-spacing="0.4">${esc(shorten(item.name))}</text>
-  <text x="50" y="119.5" text-anchor="middle" font-family="Georgia, serif" font-size="4.6"
-        fill="${accent}" letter-spacing="1.6">PLATE ${plate}</text>
-  <text x="11" y="16" font-family="Georgia, serif" font-size="5" fill="${INK}" opacity=".5" letter-spacing="1">${initials(item.name)}</text>
+  <g transform="translate(50 48) rotate(${rot}) scale(0.62) translate(-50 -50)">${glyph}</g>
+  <rect x="7.5" y="88" width="85" height="0.7" fill="${INK}" opacity=".4"/>
+  ${caption(item.name)}
+  <text x="50" y="124.5" text-anchor="middle" font-family="Georgia, serif" font-size="4.4"
+        fill="${accent}" letter-spacing="1.5">PLATE ${plate}</text>
   <rect width="100" height="130" fill="url(#vg${uid})"/>
 </svg>`;
 }
 
-// Long names get a smaller effective width; trim gracefully rather than clip.
-function shorten(name) {
-  return name.length > 22 ? name.slice(0, 21).trimEnd() + '…' : name;
+/**
+ * The card name, set as large as will fit. Cards are read at thumbnail size on
+ * a crowded table, so the caption is the part that has to survive scaling - it
+ * gets the bottom third of the plate and wraps to two lines rather than
+ * shrinking or truncating.
+ */
+function caption(name) {
+  const lines = wrap(name, 15);
+  const size = lines.length > 1 ? 10.5 : 12.5;
+  const baseY = lines.length > 1 ? 100 : 105;
+  const step = 11.5;
+  return lines.map((line, i) =>
+    `<text x="50" y="${baseY + i * step}" text-anchor="middle" font-weight="600"` +
+    ` font-family="Georgia, 'Times New Roman', serif" font-size="${size}"` +
+    ` fill="${INK}" letter-spacing="0.1">${esc(line)}</text>`
+  ).join('');
+}
+
+// Greedy wrap into at most two lines, splitting an over-long single word.
+function wrap(name, perLine) {
+  const words = name.split(' ');
+  if (words.length === 1) {
+    return name.length <= perLine + 3 ? [name]
+      : [name.slice(0, perLine), name.slice(perLine)];
+  }
+  const lines = [];
+  let cur = '';
+  for (const w of words) {
+    const next = cur ? cur + ' ' + w : w;
+    if (next.length > perLine && cur) { lines.push(cur); cur = w; }
+    else cur = next;
+  }
+  if (cur) lines.push(cur);
+  if (lines.length <= 2) return lines;
+  // Three-plus lines never happens with this deck, but fold the tail in if it does.
+  return [lines[0], lines.slice(1).join(' ')];
 }
 
 function esc(s) {

@@ -7,7 +7,7 @@
 .game-grid {
   max-width: 1500px; margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 310px;
+  grid-template-columns: minmax(0, 1fr) 348px;
   grid-template-areas:
     "head  head"
     "board side"
@@ -99,11 +99,6 @@
   letter-spacing: .14em; text-transform: uppercase;
 }
 .you-chip .you-name { font-size: .9rem; color: var(--text-dim); }
-.role-scientist    { color: var(--good-lit); }
-.role-murderer     { color: var(--blood-lit); }
-.role-accomplice   { color: var(--amber); }
-.role-witness      { color: var(--steel-lit); }
-.role-investigator { color: var(--brass); }
 
 /* ------------------------------------------------------- scene tiles ---- */
 
@@ -114,17 +109,21 @@
   padding: 1rem;
 }
 
+/* All six tiles read as one row - the board is meant to be scanned across in a
+   single glance, and a 4 + 2 wrap breaks that reading. */
 .tile-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
-  gap: .8rem;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: .55rem;
 }
+@media (max-width: 1180px) { .tile-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; } }
+@media (max-width: 660px)  { .tile-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 .tile {
   position: relative;
   background: linear-gradient(172deg, #efe4c8 0%, #ddceac 48%, #c9b892 100%);
   border-radius: var(--r-sm);
-  padding: .55rem .55rem .5rem;
+  padding: .45rem .42rem .42rem;
   color: #16120c;
   box-shadow: 0 8px 22px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.35) inset;
   animation: tile-in .5s var(--ease);
@@ -147,7 +146,7 @@
 }
 .tile-title {
   font-family: var(--display); font-weight: 700;
-  font-size: .74rem; letter-spacing: .1em; text-transform: uppercase;
+  font-size: .67rem; letter-spacing: .06em; text-transform: uppercase;
   color: #1d1710; line-height: 1.15;
 }
 .tile-sub {
@@ -170,9 +169,9 @@
 
 .tile-opt {
   position: relative;
-  display: flex; align-items: center; gap: .45rem;
-  padding: .29rem .35rem;
-  font-size: .86rem; line-height: 1.2;
+  display: flex; align-items: center; gap: .32rem;
+  padding: .22rem .26rem;
+  font-size: .79rem; line-height: 1.18;
   color: #2a2218;
   border-radius: 2px;
   border: 1px solid transparent;
@@ -180,7 +179,7 @@
   background: none; font-family: var(--body); cursor: default;
 }
 .tile-opt .opt-dot {
-  flex: none; width: 15px; height: 15px; border-radius: 50%;
+  flex: none; width: 13px; height: 13px; border-radius: 50%;
   border: 1.5px solid rgba(40,32,22,.42);
   position: relative;
 }
@@ -221,7 +220,7 @@
    read together without a long scroll. */
 .table {
   display: grid; gap: .8rem;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
   align-items: start;
 }
 
@@ -260,11 +259,14 @@
 .hand { display: grid; gap: .5rem; }
 .hand-row { display: flex; gap: .4rem; align-items: center; }
 .hand-label {
-  flex: none; width: 3.6rem;
-  font-family: var(--type); font-size: .54rem; letter-spacing: .13em;
+  flex: none; width: 2.9rem;
+  font-family: var(--type); font-size: .5rem; letter-spacing: .1em;
   text-transform: uppercase; color: var(--text-faint); line-height: 1.2;
 }
-.hand-cards { display: flex; gap: .4rem; flex-wrap: wrap; flex: 1; }
+/* A hand is four cards on one line. Wrapping made the fourth card look like it
+   belonged to the row below. */
+.hand-cards { display: flex; gap: .34rem; flex-wrap: nowrap; flex: 1; min-width: 0; }
+.hand-cards .card { flex: 1 1 0; min-width: 0; width: auto; max-width: 84px; }
 
 /* ------------------------------------------------------------ cards ---- */
 
@@ -283,8 +285,9 @@
 .card .card-img { display: block; width: 100%; aspect-ratio: 100 / 130; object-fit: cover; }
 .card .card-name {
   position: absolute; left: 0; right: 0; bottom: 0;
-  font-family: var(--body); font-size: .58rem; line-height: 1.15;
-  padding: .5rem .25rem .22rem;
+  font-family: var(--body); font-weight: 600;
+  font-size: .74rem; line-height: 1.12;
+  padding: .55rem .2rem .26rem;
   text-align: center; color: #f0e7d4;
   background: linear-gradient(transparent, rgba(8,6,4,.92) 55%);
   text-shadow: 0 1px 2px #000;
@@ -294,9 +297,14 @@
 
 .card.is-pickable { cursor: pointer; }
 .card.is-pickable:hover { transform: translateY(-6px) scale(1.05); box-shadow: 0 12px 26px rgba(0,0,0,.7); z-index: 3; }
-.card.is-picked {
-  box-shadow: 0 0 0 2px var(--blood-lit), 0 0 20px var(--blood-glow), 0 10px 24px rgba(0,0,0,.6);
+.card.is-picked,
+.card.is-pickable.is-picked,
+.card.is-pickable.is-picked:hover {
+  box-shadow: 0 0 0 2px var(--blood-lit), 0 0 22px var(--blood-glow), 0 10px 24px rgba(0,0,0,.6);
   transform: translateY(-5px);
+  /* No transition on the outline: the mark must land on the click, not a beat
+     after it. */
+  transition: transform .18s var(--ease);
 }
 .card.is-solution { box-shadow: 0 0 0 2px var(--brass), 0 0 22px var(--brass-glow); }
 .card.is-dim { filter: grayscale(.55) brightness(.62); }
@@ -396,7 +404,22 @@
   font-family: var(--type); font-size: .62rem; letter-spacing: .24em;
   text-transform: uppercase; color: var(--text-faint); font-weight: 400; margin-bottom: .55rem;
 }
-.pick-cards { display: flex; gap: .6rem; flex-wrap: wrap; }
+.pick-cards { display: flex; gap: .6rem; flex-wrap: nowrap; }
+.pick-cards .card { flex: 1 1 0; min-width: 0; width: auto; max-width: 132px; }
+
+.pick-table { display: grid; gap: .7rem; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
+.pick-seat {
+  background: rgba(0,0,0,.34);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  padding: .55rem .65rem;
+}
+.pick-seat h5 {
+  font-family: var(--display); font-size: .82rem; font-weight: 700;
+  letter-spacing: .06em; color: var(--paper-dim); margin: 0 0 .4rem;
+}
+.pick-seat .hand-row { margin-bottom: .3rem; }
+.pick-seat .hand-label { width: 3.1rem; }
 
 .waiting-note {
   text-align: center; font-family: var(--type);
@@ -480,3 +503,13 @@
   .hand-row { flex-wrap: wrap; }
   .dossier { padding: 1.3rem; }
 }
+
+/* ------------------------------------------------------- role colours ---- */
+/* Defined last and doubled up so they beat contextual colour rules such as
+   `.dossier p`. Investigators read green and the murderer red, which is the
+   distinction that actually matters at a glance. */
+.role-investigator.role-investigator { color: var(--good-lit); }
+.role-murderer.role-murderer         { color: var(--blood-lit); }
+.role-scientist.role-scientist       { color: var(--brass); }
+.role-accomplice.role-accomplice     { color: var(--amber); }
+.role-witness.role-witness           { color: var(--steel-lit); }

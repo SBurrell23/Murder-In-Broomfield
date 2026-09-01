@@ -96,8 +96,12 @@ function playGame(seed, nPlayers, useAW, style) {
     ok(v.players.every(pp => pp.role === undefined), 'public player list carries no roles');
   }
 
-  g.players.forEach(p => g.dispatch(p.id, { type: 'acknowledgeBriefing' }));
-  ok(g.phase === PHASE.SCIENTIST_SETUP, 'all briefed -> setup');
+  // Everyone else acknowledging must NOT start the game; only the scientist does.
+  g.players.filter(p => p.role !== ROLE.SCIENTIST)
+    .forEach(p => g.dispatch(p.id, { type: 'acknowledgeBriefing' }));
+  ok(g.phase === PHASE.NIGHT_REVIEW, 'non-scientists cannot start the case');
+  g.dispatch(g.scientistId, { type: 'acknowledgeBriefing' });
+  ok(g.phase === PHASE.SCIENTIST_SETUP, 'scientist acknowledgement -> setup');
 
   // --- scientist setup --------------------------------------------------
   ok(!g.dispatch(g.scientistId, { type: 'confirmSetup' }).ok, 'cannot confirm with bullets missing');

@@ -172,15 +172,19 @@ function renderNight(view) {
     dossier.append(renderMurdererPicker(view));
   } else if (view.phase === PHASE.NIGHT_MURDERER) {
     dossier.append(el('p.waiting-note', { text: 'The murderer is choosing' }));
-  } else {
+  } else if (role === 'scientist') {
     dossier.append(
       el('div', { style: { marginTop: '1.4rem' } },
         el('button.btn.btn-primary.btn-lg', {
           text: 'I Have Read The File',
           onclick: e => { audio.click(); e.currentTarget.disabled = true; act({ type: 'acknowledgeBriefing' }); }
         })),
-      el('p.waiting-note', { text: 'Waiting for the others' })
+      el('p.action-note', { style: { marginTop: '.8rem' },
+        text: 'The others are reading their own dossiers. Open the case when you are ready.' })
     );
+  } else {
+    // Everyone but the scientist just reads and waits.
+    dossier.append(el('p.waiting-note', { text: 'The Forensic Scientist is reading the file' }));
   }
 
   host.append(dossier);
@@ -214,6 +218,27 @@ function renderMurdererPicker(view) {
   const me = view.players.find(p => p.id === view.you.id);
   const wrap = el('div.pick-grid');
   let picked = { meansId: null, clueId: null };
+
+  // The murderer picks from their own hand, but the choice only makes sense
+  // against what everyone else is holding - a weapon nobody can confuse with
+  // another player's is a short game. So the whole table is shown first.
+  const others = view.players.filter(p => !p.isScientist && p.id !== view.you.id);
+  if (others.length) {
+    const table = el('div.pick-table');
+    for (const p of others) {
+      table.append(el('div.pick-seat', null,
+        el('h5', { text: p.name }),
+        el('div.hand-row', null,
+          el('span.hand-label', { text: 'Means' }),
+          el('div.hand-cards', null, p.hand.means.map(id => cardEl(id, { size: 'sm' })))),
+        el('div.hand-row', null,
+          el('span.hand-label', { text: 'Evidence' }),
+          el('div.hand-cards', null, p.hand.clues.map(id => cardEl(id, { size: 'sm' }))))));
+    }
+    wrap.append(el('div.pick-group', null,
+      el('h4', { text: 'What everyone else is holding' }),
+      table));
+  }
 
   const confirm = el('button.btn.btn-danger.btn-lg', {
     text: 'Commit The Deed', disabled: true,
@@ -377,13 +402,18 @@ function renderBoard(view) {
 
 function renderTable(view) {
   const host = $('#table');
+  const mine = $('#you-seat');
   clear(host);
+  clear(mine);
 
   const pending = view.pendingAccusation;
 
+  // Your own seat lives in the side rail where it is always to hand; everyone
+  // else sits under the board.
   for (const p of view.players) {
+    const target = p.id === view.you.id ? mine : host;
     if (p.isScientist) {
-      host.append(el('div.seat-card.is-scientist', {
+      target.append(el('div.seat-card.is-scientist', {
         class: [p.id === view.you.id ? 'is-you' : '',
                 p.connected === false ? 'is-offline' : ''].filter(Boolean).join(' ')
       },
@@ -427,8 +457,10 @@ function renderTable(view) {
           cardEl(id, { solution: solutionIds.includes(id) }))))
     );
     card.append(hand);
-    host.append(card);
+    target.append(card);
   }
+
+  $('#you-block').hidden = !mine.children.length;
 }
 
 function renderLog(view) {

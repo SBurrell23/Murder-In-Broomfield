@@ -47,9 +47,10 @@ enable the **Accomplice & Witness** pair.
 
 ### The shape of a game
 
-1. **Night.** The Murderer picks one Means of Murder and one piece of Key
-   Evidence from their own face-up hand. Each player then reads a private
-   dossier containing only what their role is entitled to know.
+1. **Night.** The Murderer sees every player's face-up cards, then picks one
+   Means of Murder and one piece of Key Evidence from their own hand. Each
+   player reads a private dossier containing only what their role is entitled
+   to know; only the Forensic Scientist has to acknowledge it to begin.
 2. **Setup.** The Scientist places one bullet marker on the Cause of Death tile,
    one on the Location of Crime tile, and one on each of four Scene Tiles. The
    Cause of Death tile is fixed for every game — Suffocation, Severe Injury,
@@ -71,12 +72,16 @@ enable the **Accomplice & Witness** pair.
 
 ## Card art
 
-The game ships complete with **zero image files**. Every card renders as a
-deterministic noir engraving generated in `js/art/procedural.js` — aged paper, a
-single ink glyph chosen from the card's motif, a caption and a plate number.
+Cards render as deterministic noir engravings generated in
+`js/art/procedural.js` — aged paper, a single ink glyph chosen from the card's
+motif, a large caption and a plate number. **This is the default**, because the
+engravings are consistent and stay legible at thumbnail size on a crowded table.
 
-Real photographs are strictly an upgrade layer, and swapping them in is a file
-drop:
+Photographs are opt-in. `?photos=1` switches them on and the choice is
+remembered; `?photos=0` switches back. Any card without a usable photo falls
+back to its engraving, so the two can mix freely.
+
+Adding your own photographs is a file drop:
 
 ```
 assets/images/means/butcher-knife.jpg     <- matches the `img` slug in js/data/means.js

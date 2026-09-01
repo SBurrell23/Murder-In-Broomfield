@@ -242,14 +242,6 @@ export class StreetScene {
     g.closePath();
     g.fill();
 
-    // Rim light down the lamp-facing edge.
-    g.strokeStyle = 'rgba(255,198,132,0.16)';
-    g.lineWidth = 1.3 * s;
-    g.beginPath();
-    g.moveTo(figX + 12 * s, brimY - 4 * s);
-    g.quadraticCurveTo(figX + 20 * s, headY + 26 * s, figX + 27 * s, y - 70 * s);
-    g.stroke();
-
     g.restore();
 
     // The cigarette sits at the fingertips, just off the mouth on the lit side.

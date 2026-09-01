@@ -195,13 +195,15 @@ export class Game {
     return { ok: true };
   }
 
+  // Only the Forensic Scientist gates the start. Everyone else simply reads
+  // their dossier and waits - making four people press a button just to begin
+  // is friction with no gameplay behind it.
   _acknowledgeBriefing(actorId) {
     if (this.phase !== PHASE.NIGHT_REVIEW) return { ok: false, error: 'Nothing to acknowledge' };
     this.briefed.add(actorId);
-    if (this.briefed.size >= this.players.length) {
-      this.phase = PHASE.SCIENTIST_SETUP;
-      this._log('system', 'The Forensic Scientist opens the case file.');
-    }
+    if (actorId !== this.scientistId) return { ok: true };
+    this.phase = PHASE.SCIENTIST_SETUP;
+    this._log('system', 'The Forensic Scientist opens the case file.');
     return { ok: true };
   }
 

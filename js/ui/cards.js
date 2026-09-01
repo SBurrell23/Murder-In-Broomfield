@@ -30,12 +30,34 @@ export function nameOf(id) {
   return it ? it.name : '(unknown)';
 }
 
-// Optional manifest of real photographs that actually exist on disk. When it is
-// loaded we request exactly one file per card; without it we fall back to
-// probing extensions, so hand-dropped images work with no build step.
+// Card art source.
+//
+// The procedural engravings are the default: they are consistent, legible at
+// card size, and unmistakably of a piece with the rest of the game. The scraped
+// photographs vary wildly in framing and quality, so they are opt-in.
+//
+// Turn photographs on with ?photos=1 (or off again with ?photos=0); the choice
+// is remembered. assets/images and the fetch/review tools stay in place, so
+// this is a one-flag decision either way.
+const PHOTO_KEY = 'mib.usePhotos';
+
+function photosEnabled() {
+  try {
+    const q = new URLSearchParams(location.search).get('photos');
+    if (q === '1' || q === 'true') { localStorage.setItem(PHOTO_KEY, '1'); return true; }
+    if (q === '0' || q === 'false') { localStorage.removeItem(PHOTO_KEY); return false; }
+    return localStorage.getItem(PHOTO_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export const usePhotos = photosEnabled;
+
 let manifest = null;
 
 export async function loadImageManifest(url = 'assets/images/manifest.json') {
+  if (!photosEnabled()) return null;   // engravings need no lookup
   try {
     const res = await fetch(url, { cache: 'no-cache' });
     if (!res.ok) return null;
@@ -86,12 +108,15 @@ export function cardEl(id, opts = {}) {
   const img = el('img.card-img', { alt: item.name, loading: 'lazy', decoding: 'async' });
   const label = el('span.card-name', { text: item.name });
 
-  // Walk the candidate photo paths; the first that decodes wins, otherwise the
-  // engraving (which carries its own caption) is used.
+  // Engravings unless photographs are switched on. When they are, walk the
+  // candidate paths; the first that decodes wins, and anything missing or
+  // undecodable falls back to the engraving.
   const fromManifest = manifestSource(item, kind);
-  const sources = fromManifest === undefined && manifest
-    ? []                                  // manifest says this card has no photo
-    : fromManifest ? [fromManifest] : cardImageSources(item, kind);
+  const sources = !photosEnabled()
+    ? []
+    : fromManifest === undefined && manifest
+      ? []                                // manifest says this card has no photo
+      : fromManifest ? [fromManifest] : cardImageSources(item, kind);
   let attempt = 0;
   const tryNext = () => {
     if (attempt < sources.length) {

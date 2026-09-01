@@ -136,8 +136,12 @@ async function scenario({ nClients, useAW, pickScientist, label }) {
       `${label}: witness sees a pair but no cards`);
   }
 
-  for (const c of clients) c.action({ type: 'acknowledgeBriefing' });
-  host.localAction({ type: 'acknowledgeBriefing' });
+  // Only the scientist's acknowledgement should move the game on.
+  for (const c of clients) if (c.youId !== g.scientistId) c.action({ type: 'acknowledgeBriefing' });
+  await settle(90);
+  ok(g.phase === PHASE.NIGHT_REVIEW, `${label}: non-scientists cannot start the case`);
+  if (g.scientistId === host.hostSeatId) host.localAction({ type: 'acknowledgeBriefing' });
+  else clients.find(c => c.youId === g.scientistId).action({ type: 'acknowledgeBriefing' });
   await settle(90);
   ok(g.phase === PHASE.SCIENTIST_SETUP, `${label}: setup phase reached`);
 
