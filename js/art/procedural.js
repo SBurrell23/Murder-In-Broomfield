@@ -238,41 +238,104 @@ export function cardArtSVG(item, kind) {
 }
 
 /**
- * The card name, set as large as will fit. Cards are read at thumbnail size on
- * a crowded table, so the caption is the part that has to survive scaling - it
- * gets the bottom third of the plate and wraps to two lines rather than
- * shrinking or truncating.
+ * The card name, set as large as will fit inside the plate border.
+ *
+ * SVG cannot measure text, so widths are estimated from per-character advances
+ * and the size is shrunk until the longest line fits. `textLength` is added as
+ * a hard clamp for the rare name that still runs long at the minimum size, so
+ * a caption can never spill past the border.
  */
+const CAP_MAX_W = 82;        // usable width inside the 85-unit inner border
+const CAP_MIN_SIZE = 7.4;
+
+// Real measurement via a canvas context, which is exact for the same font
+// stack the SVG uses. Estimating advances by hand was out by roughly 14% and
+// let most captions run past the border.
+let measureCtx;
+const widthCache = new Map();
+
+function emWidth(text) {
+  if (widthCache.has(text)) return widthCache.get(text);
+  let em;
+  if (measureCtx === undefined) {
+    try { measureCtx = document.createElement('canvas').getContext('2d'); }
+    catch { measureCtx = null; }
+  }
+  if (measureCtx) {
+    // Width scales linearly with font-size, so measure once at 100 and divide.
+    measureCtx.font = "600 100px Georgia, 'Times New Roman', serif";
+    em = measureCtx.measureText(text).width / 100;
+  } else {
+    em = estEm(text) * 1.15;   // headless fallback, padded to stay conservative
+  }
+  widthCache.set(text, em);
+  return em;
+}
+
+// Rough Georgia advances in em at weight 600, used only when there is no
+// canvas to measure with (the headless test environment).
+function estEm(text) {
+  let em = 0;
+  for (const ch of text) {
+    if (ch === ' ') em += 0.26;
+    else if ('ijl'.includes(ch)) em += 0.30;
+    else if ('ftr'.includes(ch)) em += 0.38;
+    else if ('mw'.includes(ch)) em += 0.80;
+    else if ('MW'.includes(ch)) em += 0.92;
+    else if ("-'/.".includes(ch)) em += 0.32;
+    else if (ch >= 'A' && ch <= 'Z') em += 0.68;
+    else if (ch >= '0' && ch <= '9') em += 0.52;
+    else em += 0.50;
+  }
+  return em;
+}
+
 function caption(name) {
-  const lines = wrap(name, 15);
-  const size = lines.length > 1 ? 10.5 : 12.5;
-  const baseY = lines.length > 1 ? 100 : 105;
-  const step = 11.5;
-  return lines.map((line, i) =>
-    `<text x="50" y="${baseY + i * step}" text-anchor="middle" font-weight="600"` +
-    ` font-family="Georgia, 'Times New Roman', serif" font-size="${size}"` +
-    ` fill="${INK}" letter-spacing="0.1">${esc(line)}</text>`
-  ).join('');
+  // Prefer one large line; wrap only when a single line would get too small.
+  let lines = [name];
+  const oneLineFit = CAP_MAX_W / emWidth(name);
+  let size = Math.min(13, oneLineFit);
+
+  if (oneLineFit < 10) {
+    lines = wrap(name);
+    const widest = Math.max(...lines.map(emWidth));
+    size = Math.min(11.5, CAP_MAX_W / widest);
+  }
+  size = Math.max(CAP_MIN_SIZE, size);
+
+  const step = size * 1.12;
+  const block = lines.length * step;
+  // Centre the caption block in the space under the rule.
+  const top = 96 + (24 - block) / 2 + size * 0.82;
+
+  return lines.map((line, i) => {
+    const w = emWidth(line) * size;
+    // Only clamp when the estimate says it would still overflow.
+    const clamp = w > CAP_MAX_W
+      ? ` textLength="${CAP_MAX_W}" lengthAdjust="spacingAndGlyphs"`
+      : '';
+    return `<text x="50" y="${(top + i * step).toFixed(2)}" text-anchor="middle" font-weight="600"` +
+      ` font-family="Georgia, 'Times New Roman', serif" font-size="${size.toFixed(2)}"` +
+      ` fill="${INK}" letter-spacing="0"${clamp}>${esc(line)}</text>`;
+  }).join('');
 }
 
 // Greedy wrap into at most two lines, splitting an over-long single word.
-function wrap(name, perLine) {
+function wrap(name) {
   const words = name.split(' ');
   if (words.length === 1) {
-    return name.length <= perLine + 3 ? [name]
-      : [name.slice(0, perLine), name.slice(perLine)];
+    const half = Math.ceil(name.length / 2);
+    return name.length <= 13 ? [name] : [name.slice(0, half), name.slice(half)];
   }
-  const lines = [];
-  let cur = '';
-  for (const w of words) {
-    const next = cur ? cur + ' ' + w : w;
-    if (next.length > perLine && cur) { lines.push(cur); cur = w; }
-    else cur = next;
+  // Balance the two lines by estimated width rather than character count.
+  let best = null;
+  for (let i = 1; i < words.length; i++) {
+    const a = words.slice(0, i).join(' ');
+    const b = words.slice(i).join(' ');
+    const score = Math.max(emWidth(a), emWidth(b));
+    if (!best || score < best.score) best = { score, lines: [a, b] };
   }
-  if (cur) lines.push(cur);
-  if (lines.length <= 2) return lines;
-  // Three-plus lines never happens with this deck, but fold the tail in if it does.
-  return [lines[0], lines.slice(1).join(' ')];
+  return best.lines;
 }
 
 function esc(s) {

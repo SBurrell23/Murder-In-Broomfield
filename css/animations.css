@@ -230,10 +230,11 @@
 }
 
 /* Round change: a sweeping wipe with the round numeral. */
+/* Round change. The numeral alone carries it; the dark band that used to sweep
+   with it just looked like a rendering glitch. */
 .fx-round {
   position: absolute; inset: 0;
   display: grid; place-items: center;
-  background: linear-gradient(90deg, transparent, rgba(6,6,10,.96) 22%, rgba(6,6,10,.96) 78%, transparent);
   animation: wipe 1.5s var(--ease) forwards;
 }
 @keyframes wipe {
@@ -245,8 +246,11 @@
 .fx-round-text {
   font-family: 'Cinzel', Georgia, serif; font-weight: 900;
   text-transform: uppercase; letter-spacing: .34em;
-  font-size: clamp(1.3rem, 5vw, 2.6rem);
-  color: var(--brass); text-shadow: 0 0 34px var(--brass-glow);
+  font-size: clamp(1.6rem, 6vw, 3.2rem);
+  color: var(--brass);
+  /* A soft halo stands in for the old backdrop, keeping the text readable
+     against whatever is behind it. */
+  text-shadow: 0 0 34px var(--brass-glow), 0 0 90px rgba(6,6,10,.95), 0 2px 18px #000;
 }
 
 /* Case-opening curtain. */

@@ -98,9 +98,13 @@ export function cardEl(id, opts = {}) {
   if (!item) return el('div.card', { title: 'Unknown card' });
 
   const node = el('div.card', {
-    class: [size ? 'card-' + size : '', pickable ? 'is-pickable' : '',
+    // The kind class carries the border colour, which is what tells means from
+    // evidence now that the row labels are gone.
+    class: [kind === 'means' ? 'card-means' : 'card-clue',
+            size ? 'card-' + size : '', pickable ? 'is-pickable' : '',
             picked ? 'is-picked' : '', dim ? 'is-dim' : '',
-            solution ? 'is-solution' : ''].filter(Boolean).join(' '),
+            solution ? 'is-solution' : '',
+            opts.animate ? 'is-dealing' : ''].filter(Boolean).join(' '),
     title: title || item.name,
     'data-card': id
   });
@@ -133,6 +137,8 @@ export function cardEl(id, opts = {}) {
 
   node.append(img, label);
 
+  attachPreview(node, item, kind);
+
   if (pickable && onPick) {
     node.tabIndex = 0;
     node.setAttribute('role', 'button');
@@ -145,6 +151,55 @@ export function cardEl(id, opts = {}) {
   }
   return node;
 }
+
+// ------------------------------------------------------------- preview ---
+// Cards are small on a crowded table, so hovering one shows it at a readable
+// size immediately. No delay: the whole point is to glance and move on.
+
+let previewEl = null;
+
+function previewNode() {
+  if (previewEl) return previewEl;
+  previewEl = el('div.card-preview', { 'aria-hidden': 'true' });
+  document.body.append(previewEl);
+  return previewEl;
+}
+
+function showPreview(item, kind, anchor) {
+  const box = previewNode();
+  box.className = 'card-preview is-on ' + (kind === 'means' ? 'card-means' : 'card-clue');
+  box.innerHTML = '';
+  const img = el('img', { alt: '', src: artFor(item, kind) });
+  // If a photograph is in use for this card, preview that instead.
+  const src = manifestSource(item, kind);
+  if (photosEnabled() && src) img.src = src;
+  box.append(img, el('span.card-preview-name', { text: item.name }));
+
+  // Sit beside the card, flipped or nudged to stay on screen.
+  const r = anchor.getBoundingClientRect();
+  const W = 200, H = 260, pad = 12;
+  let left = r.right + pad;
+  if (left + W > window.innerWidth - 8) left = r.left - W - pad;
+  if (left < 8) left = Math.min(Math.max(8, r.left), window.innerWidth - W - 8);
+  let top = r.top + r.height / 2 - H / 2;
+  top = Math.min(Math.max(8, top), window.innerHeight - H - 8);
+  box.style.left = Math.round(left) + 'px';
+  box.style.top = Math.round(top) + 'px';
+}
+
+function hidePreview() {
+  if (previewEl) previewEl.classList.remove('is-on');
+}
+
+function attachPreview(node, item, kind) {
+  node.addEventListener('pointerenter', () => showPreview(item, kind, node));
+  node.addEventListener('pointerleave', hidePreview);
+  // A card can be removed mid-hover when the board re-renders.
+  node.addEventListener('pointercancel', hidePreview);
+}
+
+/** Hide any open preview - used when the board re-renders under the pointer. */
+export function dismissCardPreview() { hidePreview(); }
 
 /** A read-only strip of cards. */
 export function cardRow(ids, opts = {}) {

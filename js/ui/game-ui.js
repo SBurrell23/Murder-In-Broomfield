@@ -5,7 +5,7 @@
 // game truth locally - if it is not in the view, this client does not know it.
 
 import { el, $, clear, showScreen, openModal, closeModal, toast } from './dom.js';
-import { cardEl, meansById, clueById, tileById, nameOf } from './cards.js';
+import { cardEl, meansById, clueById, tileById, nameOf, dismissCardPreview } from './cards.js';
 import * as fx from './fx.js';
 import { audio } from '../audio/sfx.js';
 
@@ -56,9 +56,15 @@ let accuse = { suspectId: null, meansId: null, clueId: null };
 // clock is advisory - reaching zero changes nothing but the sound.
 const clock = { endsAt: null, skew: 0, timer: null, beeped: false, lastPip: null };
 
+// The deal animation belongs to the moment the cards arrive, not to every
+// subsequent re-render. Without this, placing one bullet re-animated every
+// hand on the table.
+let dealt = false;
+
 export function initGameUI(context) { ctx = context; }
 export function resetGameUI() {
   lastPhase = null;
+  dealt = false;
   accuse = { suspectId: null, meansId: null, clueId: null };
   stopClock();
 }
@@ -229,10 +235,8 @@ function renderMurdererPicker(view) {
       table.append(el('div.pick-seat', null,
         el('h5', { text: p.name }),
         el('div.hand-row', null,
-          el('span.hand-label', { text: 'Means' }),
           el('div.hand-cards', null, p.hand.means.map(id => cardEl(id, { size: 'sm' })))),
         el('div.hand-row', null,
-          el('span.hand-label', { text: 'Evidence' }),
           el('div.hand-cards', null, p.hand.clues.map(id => cardEl(id, { size: 'sm' }))))));
     }
     wrap.append(el('div.pick-group', null,
@@ -282,6 +286,7 @@ function renderMurdererPicker(view) {
 // ================================================================ game ===
 
 function renderGame(view) {
+  dismissCardPreview();
   syncClock(view);
   renderHead(view);
   renderBoard(view);
@@ -443,24 +448,26 @@ function renderTable(view) {
       el('span.seat-card-name', { text: p.name + (p.id === view.you.id ? ' (you)' : '') }),
       flags));
 
-    // Both hands are public - that is the whole puzzle.
+    // Both hands are public - that is the whole puzzle. Means carry an orange
+    // border and evidence a blue one, which reads faster than a row label and
+    // leaves the whole width for the cards themselves.
     const solutionIds = view.phase === PHASE.OVER ? [view.secrets?.meansId, view.secrets?.clueId] : [];
+    const deal = !dealt;
     const hand = el('div.hand');
     hand.append(
       el('div.hand-row', null,
-        el('span.hand-label', { text: 'Means of Murder' }),
         el('div.hand-cards', null, p.hand.means.map(id =>
-          cardEl(id, { solution: solutionIds.includes(id) })))),
+          cardEl(id, { solution: solutionIds.includes(id), animate: deal })))),
       el('div.hand-row', null,
-        el('span.hand-label', { text: 'Key Evidence' }),
         el('div.hand-cards', null, p.hand.clues.map(id =>
-          cardEl(id, { solution: solutionIds.includes(id) }))))
+          cardEl(id, { solution: solutionIds.includes(id), animate: deal }))))
     );
     card.append(hand);
     target.append(card);
   }
 
   $('#you-block').hidden = !mine.children.length;
+  dealt = true;
 }
 
 function renderLog(view) {
