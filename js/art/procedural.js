@@ -9,6 +9,8 @@
 // number and a stamped caption. Variation comes from hashing the card name, so
 // a given card always draws identically.
 
+import { ITEM_GLYPHS } from './glyphs/index.js';
+
 const INK = '#14100c';
 const INK_SOFT = '#3a3128';
 
@@ -186,6 +188,17 @@ const G = {
 
 const FALLBACK_GLYPH = 'paper';
 
+/**
+ * The drawing for a card. Every item has its own glyph keyed by slug; the
+ * motif set below is only a safety net for a slug that has not been drawn yet,
+ * so a missing entry degrades to a themed icon rather than an empty plate.
+ */
+function glyphFor(item) {
+  const own = ITEM_GLYPHS[item.img];
+  if (own) return own;
+  return (G[item.motif] || G[FALLBACK_GLYPH])();
+}
+
 // -------------------------------------------------------------- rendering ---
 
 function initials(name) {
@@ -200,7 +213,7 @@ function initials(name) {
 export function cardArtSVG(item, kind) {
   const h = hash(item.id + item.name);
   const rnd = seeded(h);
-  const glyph = (G[item.motif] || G[FALLBACK_GLYPH])();
+  const glyph = glyphFor(item);
   const rot = (rnd() * 6 - 3).toFixed(2);
   const plate = String(h % 900 + 100);
   const accent = kind === 'means' ? '#7e1d1d' : '#8a6a24';
@@ -231,7 +244,7 @@ export function cardArtSVG(item, kind) {
   <g transform="translate(50 48) rotate(${rot}) scale(0.62) translate(-50 -50)">${glyph}</g>
   <rect x="7.5" y="88" width="85" height="0.7" fill="${INK}" opacity=".4"/>
   ${caption(item.name)}
-  <text x="50" y="124.5" text-anchor="middle" font-family="Georgia, serif" font-size="4.4"
+  <text x="50" y="119.5" text-anchor="middle" font-family="Georgia, serif" font-size="4.4"
         fill="${accent}" letter-spacing="1.5">PLATE ${plate}</text>
   <rect width="100" height="130" fill="url(#vg${uid})"/>
 </svg>`;
@@ -299,14 +312,14 @@ function caption(name) {
   if (oneLineFit < 10) {
     lines = wrap(name);
     const widest = Math.max(...lines.map(emWidth));
-    size = Math.min(11.5, CAP_MAX_W / widest);
+    size = Math.min(10.5, CAP_MAX_W / widest);
   }
   size = Math.max(CAP_MIN_SIZE, size);
 
-  const step = size * 1.12;
-  const block = lines.length * step;
-  // Centre the caption block in the space under the rule.
-  const top = 96 + (24 - block) / 2 + size * 0.82;
+  // Fixed baselines rather than a computed band: the band let a two-line
+  // caption run into the plate number, which itself sat on the border.
+  const step = size * 1.05;
+  const top = lines.length > 1 ? 101 : 107;
 
   return lines.map((line, i) => {
     const w = emWidth(line) * size;

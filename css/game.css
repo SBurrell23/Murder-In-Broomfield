@@ -182,7 +182,7 @@
   border-radius: 2px;
   border: 1px solid transparent;
   text-align: left; width: 100%;
-  background: none; font-family: var(--body); cursor: default;
+  background: none; font-family: var(--body); cursor: var(--cursor-arrow);
 }
 .tile-opt .opt-dot {
   flex: none; width: 13px; height: 13px; border-radius: 50%;
@@ -211,12 +211,12 @@
 }
 
 /* Scientist-interactive tiles */
-.tile.is-live .tile-opt { cursor: pointer; transition: background .18s, border-color .18s; }
+.tile.is-live .tile-opt { cursor: var(--cursor-arrow); transition: background .18s, border-color .18s; }
 .tile.is-live .tile-opt:hover { background: rgba(142,31,31,.12); border-color: rgba(142,31,31,.3); }
 .tile.is-live .tile-opt:focus-visible { outline: 2px solid var(--blood); outline-offset: -2px; }
 .tile.needs-bullet { box-shadow: 0 0 0 2px var(--blood-lit), 0 8px 22px rgba(0,0,0,.6); }
 
-.tile.is-selectable { cursor: pointer; transition: transform .18s var(--ease), box-shadow .2s; }
+.tile.is-selectable { cursor: var(--cursor-arrow); transition: transform .18s var(--ease), box-shadow .2s; }
 .tile.is-selectable:hover { transform: translateY(-4px); box-shadow: 0 0 0 2px var(--amber), 0 14px 30px rgba(0,0,0,.7); }
 .tile.is-replacing { animation: tile-swap .6s var(--ease); }
 
@@ -242,7 +242,7 @@
 .seat-card.is-scientist { border-left-color: var(--good); }
 .seat-card.is-offline { opacity: .5; }
 .seat-card.is-suspect { border-left-color: var(--blood-lit); box-shadow: 0 0 0 1px var(--blood-glow); }
-.seat-card.is-target { cursor: pointer; }
+.seat-card.is-target { cursor: var(--cursor-arrow); }
 .seat-card.is-target:hover { transform: translateX(3px); border-left-color: var(--blood-lit); }
 
 .seat-card-head {
@@ -286,7 +286,6 @@
   /* Border colour is the legend: orange means, blue evidence. */
   border: 2px solid rgba(0,0,0,.55);
   box-shadow: 0 4px 12px rgba(0,0,0,.5);
-  cursor: default;
   transition: transform .2s var(--ease), box-shadow .22s, filter .22s;
 }
 /* Only cards dealt for the first time animate in. */
@@ -307,7 +306,6 @@
 /* The engraving already carries its caption; only photos need the overlay. */
 .card.is-art .card-name { display: none; }
 
-.card.is-pickable { cursor: pointer; }
 .card.is-pickable:hover { transform: translateY(-6px) scale(1.05); box-shadow: 0 12px 26px rgba(0,0,0,.7); z-index: 3; }
 .card.is-picked,
 .card.is-pickable.is-picked,
@@ -524,7 +522,7 @@
   letter-spacing: .1em; text-transform: uppercase;
   padding: .55rem 1rem; border-radius: var(--r-sm);
   background: rgba(0,0,0,.4); border: 1px solid var(--line);
-  color: var(--text-dim); cursor: pointer; transition: all .18s;
+  color: var(--text-dim); cursor: var(--cursor-arrow); transition: all .18s;
 }
 .suspect-btn:hover { border-color: var(--blood); color: var(--paper); }
 .suspect-btn.is-on {
