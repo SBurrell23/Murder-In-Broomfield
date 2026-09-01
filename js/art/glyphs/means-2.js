@@ -1,1 +1,77 @@
-export default {};
+// Means glyphs, batch 2: ligatures, cords and blunt instruments.
+export default {
+  // Piano Wire — two turned garrote grips joined by a sagging twisted wire
+  'piano-wire': `<g fill="#14100c"><rect x="15" y="16" width="13" height="30" rx="6.5"/><rect x="72" y="54" width="13" height="30" rx="6.5"/></g><g fill="none" stroke="#14100c" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 44C25 74 50 86 78 58"/><path d="M27 44C34 64 54 74 80 62"/></g><g fill="#efe6d6"><rect x="17" y="21" width="9" height="3" rx="1.5"/><rect x="17" y="38" width="9" height="3" rx="1.5"/><rect x="74" y="59" width="9" height="3" rx="1.5"/><rect x="74" y="76" width="9" height="3" rx="1.5"/></g>`,
+
+  // Silk Scarf — a long ribbon of silk falling in an S drape, fringed at both ends
+  'silk-scarf': `<path d="M55 36C53 52 61 62 59 76L73 73C71 59 65 52 67 36Z" fill="#3a3128"/><path d="M33 36C29 52 35 60 31 74L45 77C49 61 43 52 45 36Z" fill="#14100c"/><g fill="none" stroke="#3a3128" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M34 75L33 82"/><path d="M38 76L37 83"/><path d="M42 77L41 84"/><path d="M62 76L63 82"/><path d="M66 75L67 81"/><path d="M70 74L71 80"/></g><path d="M26 32A24 12 0 1 0 74 32A24 12 0 1 0 26 32Z M39 32A11 6 0 1 0 61 32A11 6 0 1 0 39 32Z" fill="#14100c" fill-rule="evenodd"/><g fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"><path d="M37 40C34 52 39 60 36 71"/><path d="M31 24C42 21 58 21 68 25"/></g>`,
+
+  // Leather Belt — strap coiled once, square buckle with prong, punched holes at the tail
+  'leather-belt': `<path d="M27 34C13 48 19 70 40 76C62 82 82 70 78 52C75 39 62 35 55 43" fill="none" stroke="#14100c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><rect x="16" y="17" width="24" height="19" rx="3" fill="#14100c"/><rect x="21" y="22" width="14" height="9" rx="2" fill="#efe6d6"/><rect x="26" y="24" width="4" height="17" rx="2" fill="#14100c"/><g fill="#efe6d6"><circle cx="66" cy="37" r="2"/><circle cx="59" cy="40" r="2"/></g>`,
+
+  // Necktie — four-in-hand knot, collar wings and a striped blade
+  'necktie': `<g fill="#3a3128"><path d="M34 15L50 23L44 27L34 21Z"/><path d="M66 15L50 23L56 27L66 21Z"/></g><path d="M40 20L60 20L64 32L50 39L36 32Z" fill="#14100c"/><path d="M40 33C40 46 34 58 34 66L50 84L66 66C66 58 60 46 60 33Z" fill="#14100c"/><g fill="none" stroke="#efe6d6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M39 49L56 41"/><path d="M40 61L60 51"/><path d="M43 71L61 62"/></g><path d="M42 27L58 27" fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>`,
+
+  // Bootlace — waxed cord pulled through a loose overhand knot, metal aglets at each end
+  'bootlace': `<path d="M18 74C30 62 36 40 50 40C62 40 65 56 52 58C40 60 38 44 50 36C62 28 72 34 84 26" fill="none" stroke="#14100c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><g fill="none" stroke="#3a3128" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 76L23 69"/><path d="M78 30L84 26"/></g><g fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 71L22 74"/><path d="M80 25L83 31"/></g>`,
+
+  // Iron Chain — five forged links, alternating flat and edge-on, running uphill
+  'iron-chain': `<g fill="none" stroke="#14100c" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="26" cy="74" rx="7" ry="11" transform="rotate(45 26 74)"/><ellipse cx="38" cy="62" rx="4.5" ry="11" transform="rotate(45 38 62)"/><ellipse cx="50" cy="50" rx="7" ry="11" transform="rotate(45 50 50)"/><ellipse cx="62" cy="38" rx="4.5" ry="11" transform="rotate(45 62 38)"/><ellipse cx="74" cy="26" rx="7" ry="11" transform="rotate(45 74 26)"/></g>`,
+
+  // Barbed Wire — twisted double strand with three four-point barbs
+  'barbed-wire': `<g fill="none" stroke="#14100c" stroke-linecap="round" stroke-linejoin="round"><g stroke-width="3.5"><path d="M16 63C32 62 32 46 50 44C68 42 68 34 84 31"/><path d="M16 57C32 60 32 52 50 50C68 48 68 40 84 37"/></g><g stroke-width="4"><path d="M24 49L36 61"/><path d="M24 61L36 49"/><path d="M44 41L56 53"/><path d="M44 53L56 41"/><path d="M64 32L76 44"/><path d="M64 44L76 32"/></g></g><g fill="none" stroke="#3a3128" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M39 44L41 55"/><path d="M59 35L61 47"/></g>`,
+
+  // Cast Iron Skillet — heavy round pan seen from above, long handle with a hanging hole
+  'cast-iron-skillet': `<path d="M20 24L28 17L48 42L40 48Z" fill="#3a3128"/><circle cx="28" cy="26" r="3.2" fill="#efe6d6"/><ellipse cx="58" cy="58" rx="26" ry="21" fill="#14100c"/><ellipse cx="58" cy="55" rx="18" ry="13" fill="none" stroke="#efe6d6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M38 66C44 73 55 77 64 76" fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>`,
+
+  // Rolling Pin — turned maple barrel with a spindle handle at each end
+  'rolling-pin': `<g transform="rotate(-25 50 50)"><rect x="16" y="45" width="17" height="10" rx="5" fill="#3a3128"/><rect x="67" y="45" width="17" height="10" rx="5" fill="#3a3128"/><rect x="29" y="40" width="42" height="20" rx="5" fill="#14100c"/><g fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M34 44L34 56"/><path d="M66 44L66 56"/><path d="M40 47L60 47" opacity="0.5"/><path d="M40 53L60 53" opacity="0.5"/></g></g>`,
+
+  // Marble Bust — classical head and shoulders on a stepped plinth
+  'marble-bust': `<path d="M36 74L64 74L70 86L30 86Z" fill="#14100c"/><path d="M38 74L62 74L62 66L38 66Z" fill="#3a3128"/><rect x="43" y="46" width="14" height="20" fill="#14100c"/><path d="M28 74C28 64 37 60 50 60C63 60 72 64 72 74Z" fill="#14100c"/><path d="M52 18C42 18 36 26 36 34L33 40L30 45L36 47L34 51C36 55 40 57 45 57C57 57 66 48 66 36C66 26 62 18 52 18Z" fill="#14100c"/><path d="M50 18C60 18 66 26 66 36C64 28 58 22 48 22Z" fill="#3a3128"/><g fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M37 36L41 37"/><path d="M46 66L46 74" opacity="0.5"/></g>`,
+
+  // Brass Candlestick — baluster stem, wide drip pan, lit taper
+  'brass-candlestick': `<path d="M50 14C56 20 55 25 50 28C45 25 44 20 50 14Z" fill="#14100c"/><path d="M50 19C53 22 52 25 50 26C48 25 47 22 50 19Z" fill="#efe6d6" opacity="0.6"/><rect x="43" y="26" width="14" height="18" fill="#efe6d6" stroke="#14100c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="50" cy="46" rx="17" ry="5.5" fill="#14100c"/><path d="M45 48L55 48C54 54 58 56 58 60C58 65 52 65 54 71L56 75L44 75L46 71C48 65 42 65 42 60C42 56 46 54 45 48Z" fill="#14100c"/><path d="M30 86L70 86L64 74L36 74Z" fill="#14100c"/><path d="M35 81L65 81" fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>`,
+
+  // Fireplace Poker — ring-topped iron rod with a side spur and a spear tip
+  'fireplace-poker': `<circle cx="70" cy="24" r="7" fill="none" stroke="#14100c" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M66 31L60 40" fill="none" stroke="#3a3128" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M62 36L32 76" fill="none" stroke="#14100c" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M55 46L50 53" fill="none" stroke="#3a3128" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M37 68C46 69 48 75 43 79" fill="none" stroke="#14100c" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M28 73L36 79L26 84Z" fill="#14100c"/>`,
+
+  // Crowbar — hooked pry bar, split claw at the hook, flared chisel foot
+  'crowbar': `<path d="M72 80L40 30" fill="none" stroke="#14100c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M40 30C34 20 25 18 21 26C19 31 23 36 28 33" fill="none" stroke="#14100c" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M66 71L82 81L74 86L61 77Z" fill="#14100c"/><path d="M26 31L30 32L27.5 36Z" fill="#efe6d6"/><path d="M52 47L58 43" fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>`,
+
+  // Claw Hammer — forged head with a curved split claw, hickory handle
+  'claw-hammer': `<path d="M54 28L66 32L60 84L50 82Z" fill="#3a3128"/><path d="M50 16L74 23L71 35L47 28Z" fill="#14100c"/><path d="M50 16C38 12 26 20 24 33C30 24 41 21 48 28Z" fill="#14100c"/><g fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M31 28C35 23 41 21 46 25"/><path d="M70 25L68 34"/><path d="M56 44L62 46" opacity="0.5"/></g>`,
+
+  // Sledgehammer — long double-faced head on a heavy shaft
+  'sledgehammer': `<path d="M36 40L47 37L61 84L50 86Z" fill="#3a3128"/><path d="M22 28L54 20L58 38L26 46Z" fill="#14100c"/><g fill="none" stroke="#efe6d6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M27 30L30 44"/><path d="M49 22L52 36"/></g>`,
+
+  // Monkey Wrench — toothed fixed jaw, sliding lower jaw, knurled adjuster
+  'monkey-wrench': `<path d="M50 52L60 46L76 78L64 84Z" fill="#14100c"/><path d="M44 22A16 16 0 1 1 44 54L44 46A8 8 0 1 0 44 30Z" fill="#14100c"/><rect x="26" y="22" width="18" height="8" fill="#14100c"/><rect x="26" y="46" width="18" height="8" fill="#14100c"/><g fill="#14100c"><path d="M30 30L36 30L33 35Z"/><path d="M38 30L44 30L41 35Z"/><path d="M30 46L36 46L33 41Z"/><path d="M38 46L44 46L41 41Z"/></g><g fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M55 30L61 33"/><path d="M56 38L62 38"/><path d="M55 46L61 43"/><path d="M60 56L70 74" opacity="0.5"/></g>`,
+
+  // Tire Iron — four-way lug wrench, a socket at every arm
+  'tire-iron': `<path d="M21 36L79 56L77 64L19 44Z" fill="#14100c"/><path d="M38 78L56 20L64 22L46 80Z" fill="#14100c"/><g fill="#14100c"><circle cx="21" cy="40" r="6.5"/><circle cx="78" cy="60" r="6.5"/><circle cx="42" cy="79" r="6.5"/><circle cx="60" cy="21" r="6.5"/></g><g fill="#efe6d6"><circle cx="21" cy="40" r="2.8"/><circle cx="78" cy="60" r="2.8"/><circle cx="42" cy="79" r="2.8"/><circle cx="60" cy="21" r="2.8"/></g>`,
+
+  // Baseball Bat — turned ash bat, fat barrel down to a knobbed grip
+  'baseball-bat': `<circle cx="28" cy="72" r="6.5" fill="#14100c"/><path d="M83 31C80 39 68 47 53 60C43 69 36 72 31 75L25 69C30 64 43 53 56 42C66 33 69 25 69 17A9.9 9.9 0 0 1 83 31Z" fill="#14100c"/><g fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M74 26C68 34 60 42 52 50" opacity="0.5"/><path d="M36 66L42 72"/></g>`,
+
+  // Golf Club — grooved iron head on a slim shaft with a wrapped grip
+  'golf-club': `<path d="M76 22L42 64" fill="none" stroke="#14100c" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M77 19L67 31" fill="none" stroke="#3a3128" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><path d="M44 62L48 78L24 80L20 72L36 66Z" fill="#14100c"/><g fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M27 74L42 72"/><path d="M28 77L44 75"/><path d="M70 24L74 27"/></g>`,
+
+  // Walking Cane — crook-handled malacca stick with a collar band and brass ferrule
+  'walking-cane': `<path d="M46 38C40 26 50 17 62 19C72 21 74 29 72 35L60 78" fill="none" stroke="#14100c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M57 73L65 75L62 85L54 83Z" fill="#3a3128"/><path d="M67 39L73 41" fill="none" stroke="#efe6d6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
+
+  // Steel-Ribbed Umbrella — open canopy on steel ribs, spike above, crook below
+  'steel-ribbed-umbrella': `<path d="M50 14L50 26" fill="none" stroke="#14100c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 54C16 32 32 22 50 22C68 22 84 32 84 54C80 64 72 64 67 54C63 64 55 64 50 54C46 64 38 64 33 54C29 64 21 64 16 54Z" fill="#14100c"/><g fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M50 24L50 51"/><path d="M50 24C58 30 64 39 67 50"/><path d="M50 24C42 30 36 39 33 50"/><path d="M50 25C62 28 76 36 82 49"/><path d="M50 25C38 28 24 36 18 49"/></g><path d="M50 54L50 74C50 82 42 84 38 78" fill="none" stroke="#14100c" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+
+  // Snow Globe — glass dome over a cottage and fir, on a turned wooden base
+  'snow-globe': `<circle cx="50" cy="44" r="26" fill="#14100c"/><path d="M26 52C36 58 64 58 74 52C72 66 28 66 26 52Z" fill="#efe6d6"/><rect x="45" y="34" width="3.5" height="8" fill="#efe6d6"/><path d="M30 45L41 34L52 45Z" fill="#efe6d6"/><rect x="34" y="47" width="14" height="8" fill="#efe6d6"/><rect x="39" y="49" width="4" height="4" fill="#14100c"/><path d="M62 36L70 54L54 54Z" fill="#efe6d6"/><g fill="#efe6d6"><circle cx="34" cy="28" r="1.8"/><circle cx="62" cy="26" r="1.8"/><circle cx="68" cy="38" r="1.8"/><circle cx="30" cy="40" r="1.8"/><circle cx="52" cy="24" r="1.8"/></g><path d="M28 68L72 68L78 82C78 85 76 86 72 86L28 86C24 86 22 85 22 82Z" fill="#3a3128"/>`,
+
+  // Trophy Cup — two-handled loving cup on a stem and plinth
+  'trophy-cup': `<g fill="none" stroke="#14100c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M33 30C21 30 20 44 31 48"/><path d="M67 30C79 30 80 44 69 48"/></g><path d="M32 26L68 26C68 44 62 54 50 56C38 54 32 44 32 26Z" fill="#14100c"/><rect x="28" y="20" width="44" height="8" rx="3" fill="#14100c"/><rect x="45" y="55" width="10" height="13" fill="#14100c"/><path d="M34 68L66 68L70 78L30 78Z" fill="#14100c"/><rect x="26" y="78" width="48" height="8" rx="2" fill="#3a3128"/><rect x="40" y="80" width="20" height="4" rx="1" fill="#efe6d6" opacity="0.6"/><g fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M42 38C44 45 47 49 50 50"/><path d="M58 38C56 45 53 49 50 50"/></g>`,
+
+  // Iron Bookend — L-shaped iron plate with two books leaning off it
+  'iron-bookend': `<path d="M34 76L34 32L46 32L46 76Z" fill="#3a3128"/><path d="M50 76L60 36L70 40L62 76Z" fill="#14100c"/><path d="M66 76L76 46L83 52L74 76Z" fill="#3a3128"/><path d="M20 24L32 24L32 84L20 84Z" fill="#14100c"/><path d="M20 74L74 74L74 84L20 84Z" fill="#14100c"/><g fill="none" stroke="#efe6d6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M38 36L38 72"/><path d="M55 44L63 66"/><path d="M71 52L67 70"/></g><g fill="#efe6d6"><circle cx="26" cy="32" r="2.5"/><circle cx="26" cy="66" r="2.5"/></g>`,
+
+  // Stone Paperweight — faceted river stone pinning a sheaf of loose papers
+  'stone-paperweight': `<path d="M26 58L80 52L84 65L30 71Z" fill="#efe6d6" stroke="#14100c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 69L73 62L79 76L23 83Z" fill="#efe6d6" stroke="#14100c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M28 60C26 48 34 38 48 36C62 34 74 42 75 53C76 63 66 69 52 70C40 71 30 68 28 60Z" fill="#14100c"/><g fill="none" stroke="#efe6d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"><path d="M46 37C44 46 48 58 44 70"/><path d="M64 39C60 48 66 57 74 58"/></g><ellipse cx="39" cy="47" rx="7" ry="4.5" fill="#efe6d6" opacity="0.3"/>`,
+};
