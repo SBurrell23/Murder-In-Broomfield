@@ -29,6 +29,9 @@ const OK_LICENCE = /^(cc0|cc[- ]by([- ]sa)?([- ][\d.]+)?|public domain|pd([- ]|$
 // A handful of card names are ambiguous as search terms ("Ivory", "Domino"),
 // or read better with a qualifier. Anything not listed searches on its name.
 const QUERY_OVERRIDES = {
+  'Shard of Glass': 'broken glass fragment',
+  'Bayonet': 'bayonet blade weapon museum',
+  'Sewing Scissors': 'scissors sewing',
   'Live Wire': 'electrical cable copper',
   'Space Heater': 'electric space heater appliance',
   'Frozen Lake': 'frozen lake ice winter',
@@ -180,7 +183,7 @@ async function search(term) {
     gsrlimit: '8',
     prop: 'imageinfo',
     iiprop: 'url|extmetadata|mime',
-    iiurlwidth: '600',
+    iiurlwidth: '480',
     format: 'json',
     origin: '*'
   });
@@ -212,13 +215,17 @@ function pickBest(pages) {
 
 // Commons rate-limits bursts with 429; back off and try again rather than
 // dropping the card.
+const MAX_BACKOFF = 8000;   // never stall the whole run on one card
+
 async function fetchWithRetry(url, tries = 4) {
   let wait = 900;
   for (let i = 0; i < tries; i++) {
     const res = await fetch(url, { headers: { 'User-Agent': UA } });
     if (res.status !== 429 && res.status !== 503) return res;
+    // Commons can answer with a very long Retry-After. Respect it as a hint but
+    // cap it, otherwise a single throttled card blocks the entire run.
     const retryAfter = Number(res.headers.get('retry-after')) * 1000;
-    await sleep(Math.max(retryAfter || 0, wait));
+    await sleep(Math.min(Math.max(retryAfter || 0, wait), MAX_BACKOFF));
     wait *= 2;
   }
   return fetch(url, { headers: { 'User-Agent': UA } });
@@ -229,6 +236,7 @@ async function download(url, dest) {
   if (!res.ok) throw new Error(`download ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
   if (buf.length < 1200) throw new Error('suspiciously small image');
+  if (buf.length > 600_000) throw new Error(`too large for a card (${(buf.length/1024)|0}kB)`);
   await writeFile(dest, buf);
   return buf.length;
 }

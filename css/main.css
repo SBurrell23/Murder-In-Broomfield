@@ -145,14 +145,14 @@ a { color: var(--brass); }
 }
 .game-title .line-1 {
   display: block;
-  font-size: clamp(1.15rem, 6.6vw, 3.3rem);
+  font-size: clamp(1.05rem, 6.1vw, 2.25rem);
   letter-spacing: .16em;
   color: var(--paper-dim);
   text-shadow: 0 2px 22px rgba(0,0,0,.9);
 }
 .game-title .line-2 {
   display: block;
-  font-size: clamp(1.85rem, 11.4vw, 6.2rem);
+  font-size: clamp(1.7rem, 10.6vw, 4.1rem);
   letter-spacing: .05em;
   color: var(--paper);
   text-shadow:

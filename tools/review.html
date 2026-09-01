@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card Art Review</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; padding: 1.5rem 1.5rem 6rem;
+    background: #0d0c11; color: #d9d3c6;
+    font: 15px/1.5 Georgia, 'Times New Roman', serif;
+  }
+  h1 { font-size: 1.4rem; letter-spacing: .06em; margin: 0 0 .3rem; }
+  .lede { color: #9a9384; max-width: 62ch; margin-bottom: 1.4rem; }
+  code { background: #1b1a22; padding: .1em .4em; border-radius: 3px; font-size: .88em; }
+
+  .bar {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; gap: .6rem; align-items: center; flex-wrap: wrap;
+    background: #0d0c11ee; backdrop-filter: blur(6px);
+    padding: .7rem 0; margin-bottom: 1rem; border-bottom: 1px solid #2e2b36;
+  }
+  button, select {
+    font: inherit; font-size: .85rem;
+    background: #1e1c25; color: #d9d3c6;
+    border: 1px solid #3a3644; border-radius: 4px;
+    padding: .45rem .9rem; cursor: pointer;
+  }
+  button:hover { border-color: #c9a227; color: #fff; }
+  .count { color: #9a9384; font-size: .85rem; margin-left: auto; }
+
+  h2 { font-size: .8rem; letter-spacing: .22em; text-transform: uppercase;
+       color: #c9a227; font-weight: normal; margin: 2rem 0 .8rem; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .8rem; }
+  figure {
+    margin: 0; background: #16151c; border: 1px solid #2a2833;
+    border-radius: 5px; overflow: hidden; cursor: pointer;
+    transition: border-color .15s, transform .12s;
+  }
+  figure:hover { transform: translateY(-2px); border-color: #4a4657; }
+  figure.rejected { border-color: #c02f2f; opacity: .45; }
+  figure.rejected img { filter: grayscale(1); }
+  figure img { display: block; width: 100%; height: 150px; object-fit: contain; background: #0a0910; }
+  figcaption { padding: .45rem .55rem; font-size: .8rem; line-height: 1.25; }
+  figcaption .slug { display: block; color: #6b6558; font-size: .72rem; font-family: monospace; }
+  figure.rejected figcaption::after { content: ' — marked for deletion'; color: #c02f2f; font-size: .72rem; }
+
+  .out {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: #16151c; border-top: 1px solid #3a3644; padding: .8rem 1.5rem;
+    max-height: 34vh; overflow: auto;
+  }
+  .out textarea {
+    width: 100%; min-height: 5.5rem; background: #0a0910; color: #b9ab8c;
+    border: 1px solid #2e2b36; border-radius: 4px; padding: .6rem;
+    font-family: ui-monospace, Consolas, monospace; font-size: .78rem;
+  }
+  .empty { color: #6b6558; font-style: italic; }
+</style>
+</head>
+<body>
+
+<h1>Card Art Review</h1>
+<p class="lede">
+  Every photograph currently in <code>assets/images</code>, shown against the card it
+  belongs to. Automated image search is imprecise, so expect a handful of wrong
+  matches. Click any card to mark it for deletion, then copy the command at the
+  bottom and run it from the project root. Deleted cards fall back to their
+  procedural engraving automatically.
+</p>
+
+<div class="bar">
+  <button id="clear">Clear marks</button>
+  <button id="copy">Copy delete command</button>
+  <select id="filter">
+    <option value="all">Show all decks</option>
+    <option value="means">Means of Murder only</option>
+    <option value="clues">Key Evidence only</option>
+  </select>
+  <span class="count" id="count"></span>
+</div>
+
+<div id="body"></div>
+
+<div class="out">
+  <textarea id="cmd" readonly spellcheck="false"></textarea>
+</div>
+
+<script type="module">
+import { MEANS } from '../js/data/means.js';
+import { CLUES } from '../js/data/clues.js';
+
+const rejected = new Set(JSON.parse(localStorage.getItem('mib.review.rejected') || '[]'));
+
+const manifest = await fetch('../assets/images/manifest.json', { cache: 'no-cache' })
+  .then(r => r.ok ? r.json() : null)
+  .catch(() => null);
+
+if (!manifest) {
+  document.querySelector('#body').innerHTML =
+    '<p class="empty">No manifest found. Run <code>node tools/build-manifest.mjs</code> first.</p>';
+}
+
+const decks = [
+  ['means', 'Means of Murder', MEANS],
+  ['clues', 'Key Evidence', CLUES]
+];
+
+function render() {
+  const filter = document.querySelector('#filter').value;
+  const body = document.querySelector('#body');
+  body.innerHTML = '';
+  let shown = 0, total = 0;
+
+  for (const [dir, label, items] of decks) {
+    const have = items.filter(i => manifest?.[dir]?.[i.img]);
+    total += have.length;
+    if (filter !== 'all' && filter !== dir) continue;
+    if (!have.length) continue;
+
+    const h = document.createElement('h2');
+    h.textContent = `${label} — ${have.length} of ${items.length} have photographs`;
+    body.append(h);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    for (const item of have) {
+      const file = manifest[dir][item.img];
+      const path = `${dir}/${file}`;
+      const fig = document.createElement('figure');
+      if (rejected.has(path)) fig.classList.add('rejected');
+      fig.innerHTML =
+        `<img src="../assets/images/${path}" alt="" loading="lazy">` +
+        `<figcaption>${item.name}<span class="slug">${file}</span></figcaption>`;
+      fig.addEventListener('click', () => {
+        if (rejected.has(path)) rejected.delete(path); else rejected.add(path);
+        fig.classList.toggle('rejected');
+        save();
+      });
+      grid.append(fig);
+      shown++;
+    }
+    body.append(grid);
+  }
+  document.querySelector('#count').textContent =
+    `${total} photographs, ${rejected.size} marked for deletion`;
+  save();
+}
+
+function save() {
+  localStorage.setItem('mib.review.rejected', JSON.stringify([...rejected]));
+  const cmd = document.querySelector('#cmd');
+  if (!rejected.size) {
+    cmd.value = '# Click any card above to mark it for deletion.';
+    return;
+  }
+  cmd.value =
+    'rm ' + [...rejected].map(p => `assets/images/${p}`).join(' ') +
+    '\nnode tools/build-manifest.mjs';
+  document.querySelector('#count').textContent =
+    document.querySelector('#count').textContent.replace(/\d+ marked/, `${rejected.size} marked`);
+}
+
+document.querySelector('#filter').addEventListener('change', render);
+document.querySelector('#clear').addEventListener('click', () => { rejected.clear(); render(); });
+document.querySelector('#copy').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(document.querySelector('#cmd').value);
+    const b = document.querySelector('#copy');
+    b.textContent = 'Copied';
+    setTimeout(() => { b.textContent = 'Copy delete command'; }, 1400);
+  } catch { document.querySelector('#cmd').select(); }
+});
+
+render();
+</script>
+</body>
+</html>

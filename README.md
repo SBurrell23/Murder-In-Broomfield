@@ -95,8 +95,18 @@ node tools/fetch-images.mjs --limit 20     # stop after 20
 node tools/fetch-images.mjs --force        # re-fetch existing files
 ```
 
-Automated image search is imprecise. Delete any result you dislike, drop in your
-own file, then rebuild the lookup table:
+Automated image search is imprecise — expect roughly one in six to be the wrong
+subject entirely. **`tools/review.html` is a contact sheet for exactly this**:
+serve the project and open `/tools/review.html`, and every fetched photograph is
+shown against the card it belongs to. Click the bad ones, copy the delete command
+it builds, and run it:
+
+```bash
+rm assets/images/means/shard-of-glass.jpg ...
+node tools/build-manifest.mjs
+```
+
+Rebuild the lookup table after adding or removing any file by hand:
 
 ```bash
 node tools/build-manifest.mjs
@@ -134,7 +144,7 @@ js/
   audio/              synthesized effects · music buses
   ui/                 dom · cards · fx · game-ui
   main.js             title, lobby, session wiring, rain
-tools/                image fetcher · manifest builder
+tools/                image fetcher · manifest builder · art review contact sheet
 tests/                headless rules and netcode suites
 ```
 
