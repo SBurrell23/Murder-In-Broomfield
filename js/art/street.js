@@ -11,6 +11,14 @@
 const WARM = [255, 186, 94];      // lamp light
 const EMBER = [255, 138, 62];
 
+// The figure has to sit ABOVE the values behind it to read at all. The road is
+// rgba(13,13,18) and the terrace rgba(3,3,6), so a near-black figure simply
+// disappeared into them. This cool slate is still unmistakably a silhouette but
+// separates from the street. Note the lamp halo is drawn over the plate with
+// 'lighter' compositing, so the figure ends up brighter than this base value
+// on its lamp-facing side; keep that in mind when tuning.
+const FIGURE = 'rgba(10,11,17,0.98)';
+
 export class StreetScene {
   constructor(canvas) {
     this.canvas = canvas;
@@ -186,54 +194,54 @@ export class StreetScene {
     const headY = y - h + headR;
 
     g.save();
-    g.fillStyle = 'rgba(5,5,9,0.97)';
+    g.fillStyle = FIGURE;
 
     // Cloak: a bell that widens to the ground, with a slight lean.
     g.beginPath();
-    g.moveTo(figX - 8 * s, headY + headR * 0.7);
-    g.bezierCurveTo(figX - 30 * s, headY + 46 * s, figX - 38 * s, y - 54 * s, figX - 34 * s, y);
-    g.lineTo(figX + 33 * s, y);
-    g.bezierCurveTo(figX + 37 * s, y - 58 * s, figX + 28 * s, headY + 44 * s, figX + 9 * s, headY + headR * 0.7);
+    g.moveTo(figX - 7 * s, headY + headR * 0.7);
+    g.bezierCurveTo(figX - 19 * s, headY + 48 * s, figX - 24 * s, y - 52 * s, figX - 21 * s, y);
+    g.lineTo(figX + 20 * s, y);
+    g.bezierCurveTo(figX + 23 * s, y - 56 * s, figX + 18 * s, headY + 46 * s, figX + 8 * s, headY + headR * 0.7);
     g.closePath();
     g.fill();
 
     // A fold in the cloak, barely lighter, catching the lamp.
-    g.strokeStyle = 'rgba(140,148,172,0.07)';
+    g.strokeStyle = 'rgba(150,158,184,0.06)';
     g.lineWidth = 1.6 * s;
     g.beginPath();
-    g.moveTo(figX + 12 * s, headY + 34 * s);
-    g.quadraticCurveTo(figX + 24 * s, y - 66 * s, figX + 22 * s, y - 6 * s);
+    g.moveTo(figX + 9 * s, headY + 34 * s);
+    g.quadraticCurveTo(figX + 15 * s, y - 66 * s, figX + 13 * s, y - 6 * s);
     g.stroke();
 
     // Shoulders, so the cloak reads as a person rather than a bell.
-    g.fillStyle = 'rgba(5,5,9,0.97)';
+    g.fillStyle = FIGURE;
     g.beginPath();
-    g.moveTo(figX - 20 * s, headY + 30 * s);
-    g.quadraticCurveTo(figX, headY + 14 * s, figX + 20 * s, headY + 30 * s);
-    g.lineTo(figX + 18 * s, headY + 40 * s);
-    g.quadraticCurveTo(figX, headY + 26 * s, figX - 18 * s, headY + 40 * s);
+    g.moveTo(figX - 15 * s, headY + 30 * s);
+    g.quadraticCurveTo(figX, headY + 15 * s, figX + 15 * s, headY + 30 * s);
+    g.lineTo(figX + 14 * s, headY + 40 * s);
+    g.quadraticCurveTo(figX, headY + 26 * s, figX - 14 * s, headY + 40 * s);
     g.closePath();
     g.fill();
 
     // The forearm brought up to the mouth, holding the cigarette. This is what
     // actually sells the pose - without it the ember floats in mid-air.
-    g.strokeStyle = 'rgba(5,5,9,0.97)';
-    g.lineWidth = 6.5 * s;
+    g.strokeStyle = FIGURE;
+    g.lineWidth = 5.6 * s;
     g.lineCap = 'round';
     g.beginPath();
-    g.moveTo(figX + 19 * s, headY + 44 * s);   // elbow, low and out
-    g.quadraticCurveTo(figX + 24 * s, headY + 22 * s, figX + 13 * s, headY + 9 * s);
+    g.moveTo(figX + 15 * s, headY + 44 * s);   // elbow, low and out
+    g.quadraticCurveTo(figX + 19 * s, headY + 22 * s, figX + 11 * s, headY + 9 * s);
     g.stroke();
 
     // Head and hat.
-    g.fillStyle = 'rgba(5,5,9,0.97)';
+    g.fillStyle = FIGURE;
     g.beginPath();
     g.arc(figX, headY, headR, 0, Math.PI * 2);
     g.fill();
 
     const brimY = headY - headR * 0.45;
     g.beginPath();
-    g.ellipse(figX, brimY, 25 * s, 5.4 * s, -0.05, 0, Math.PI * 2);
+    g.ellipse(figX, brimY, 21 * s, 5 * s, -0.05, 0, Math.PI * 2);
     g.fill();
     g.beginPath();                       // crown
     g.moveTo(figX - 12 * s, brimY);
@@ -245,7 +253,7 @@ export class StreetScene {
     g.restore();
 
     // The cigarette sits at the fingertips, just off the mouth on the lit side.
-    this.ember = { x: figX + 11 * s, y: headY + 6 * s, s };
+    this.ember = { x: figX + 9.5 * s, y: headY + 6 * s, s };
   }
 
   // Wet-road reflections. Drawn through a soft elliptical mask, because a
@@ -276,7 +284,7 @@ export class StreetScene {
     g.rect(0, ground, this.w, h - ground);
     g.clip();
     smear(lampX, 70, 160, '255,186,94', 0.085);
-    smear(figX, 78, 100, '8,8,14', 0.5);
+    smear(figX, 54, 100, '8,8,14', 0.5);
     g.restore();
   }
 
