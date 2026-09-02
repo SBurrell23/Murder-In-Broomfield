@@ -337,11 +337,13 @@ function phaseLine(view) {
   }
   switch (view.phase) {
     case PHASE.SCIENTIST_SETUP:
-      return iAmSci ? 'Mark one option on every tile, then open the case.'
+      return iAmSci ? 'Mark one option on every tile. The last one opens the case.'
                     : `${sciName} is reading the evidence.`;
     case PHASE.REPLACING:
       return iAmSci
-        ? (view.replacingSlot === null ? 'Choose a scene tile to replace.' : 'Mark the new tile.')
+        ? (view.replacingSlot === null
+            ? 'Choose a scene tile to replace.'
+            : 'Mark the new tile. That starts the next round.')
         : `${sciName} is revising the file.`;
     case PHASE.LAST_CHANCE:
       return 'The badge landed. The murderer has one last card to play: name the witness.';
@@ -665,14 +667,14 @@ function renderActions(view) {
           onclick: () => { audio.click(); act({ type: 'resolveAccusation' }); }
         }));
     } else if (view.phase === PHASE.SCIENTIST_SETUP) {
-      const placed = view.tiles.cause.bullet !== null && view.tiles.place.bullet !== null &&
-        view.tiles.scenes.every(t => t.bullet !== null);
-      stack.append(
-        el('p.action-note', { text: placed ? 'Every tile is marked.' : 'Mark one option on each tile above.' }),
-        el('button.btn.btn-primary', {
-          text: 'Open The Case', disabled: !placed,
-          onclick: () => { audio.click(); act({ type: 'confirmSetup' }); }
-        }));
+      const left = [view.tiles.cause.bullet, view.tiles.place.bullet,
+                    ...view.tiles.scenes.map(t => t.bullet)].filter(b => b === null).length;
+      // No confirm button: the last bullet opens the case.
+      stack.append(el('p.action-note', {
+        text: left === 1
+          ? 'One tile left. Marking it opens the case.'
+          : `Mark one option on each tile above. ${left} to go.`
+      }));
     } else if (view.phase === PHASE.ROUND) {
       const left = 2 - view.replacementsUsed;
       stack.append(
@@ -686,17 +688,12 @@ function renderActions(view) {
           onclick: () => { audio.click(); act({ type: 'beginReplacement' }); }
         }) : null);
     } else if (view.phase === PHASE.REPLACING) {
-      const slot = view.replacingSlot;
-      const target = slot !== null ? view.tiles.scenes.find(t => t.slot === slot) : null;
-      stack.append(
-        el('p.action-note', {
-          text: slot === null ? 'Pick the scene tile to swap out.' : 'Mark the new tile, then continue.'
-        }),
-        el('button.btn.btn-primary', {
-          text: 'Begin Next Round',
-          disabled: !target || target.bullet === null,
-          onclick: () => { audio.click(); act({ type: 'confirmReplacement' }); }
-        }));
+      // Again no confirm button: marking the new tile starts the round.
+      stack.append(el('p.action-note', {
+        text: view.replacingSlot === null
+          ? 'Pick the scene tile to swap out.'
+          : 'Mark the new tile to begin the next round.'
+      }));
     }
   }
 
@@ -849,9 +846,11 @@ function renderOver(view) {
   host.append(grid);
 
   host.append(
-    el('div.side-block', { style: { textAlign: 'left', maxWidth: '420px', margin: '0 auto 2rem' } },
+    el('div.side-block', { style: { textAlign: 'left', maxWidth: '420px', margin: '0 auto 1.4rem' } },
       el('h3', { text: 'Everyone At The Table' }),
       el('ul.roster', null, rosterRows(view))));
+
+  host.append(renderCaseFile(view));
 
   const actions = el('div', { style: { display: 'flex', gap: '.8rem', justifyContent: 'center', flexWrap: 'wrap' } });
   if (ctx && ctx.isHost) {
@@ -866,6 +865,64 @@ function renderOver(view) {
     text: 'Leave', onclick: () => { audio.click(); ctx.leave(); }
   }));
   host.append(actions);
+}
+
+/**
+ * The whole case file, after the fact: every scene tile that was ever on the
+ * table with the option it was marked on, including the two swapped out, and
+ * every badge that was thrown with the cards it named. During play this is
+ * spread across the board and the log, so it is worth gathering in one place
+ * once the game is done.
+ */
+function renderCaseFile(view) {
+  const box = el('details.case-file');
+  box.append(el('summary', { text: 'The Case File' }));
+
+  const tileBlock = (entry, note) => {
+    const tile = tileById(entry.tileId);
+    if (!tile) return null;
+    const marked = entry.bullet !== null && entry.bullet !== undefined
+      ? tile.options[entry.bullet] : null;
+    return el('div.file-tile', { class: note ? 'is-replaced' : '' },
+      el('div.file-tile-name', { text: tile.title }),
+      el('div.file-tile-mark', { text: marked || 'never marked' }),
+      note ? el('div.file-tile-note', { text: note }) : null);
+  };
+
+  const finals = [
+    tileBlock(view.tiles.cause),
+    tileBlock(view.tiles.place),
+    ...view.tiles.scenes.map(t => tileBlock(t))
+  ].filter(Boolean);
+
+  box.append(
+    el('h4', { text: 'On the table at the end' }),
+    el('div.file-tiles', null, finals));
+
+  const swapped = (view.replacedTiles || [])
+    .map(t => tileBlock(t, `swapped out after round ${t.round}`))
+    .filter(Boolean);
+  if (swapped.length) {
+    box.append(
+      el('h4', { text: 'Swapped out during the case' }),
+      el('div.file-tiles', null, swapped));
+  }
+
+  const rows = view.accusations.map(a => {
+    const by = view.players.find(p => p.id === a.byId);
+    const at = view.players.find(p => p.id === a.suspectId);
+    return el('li.file-guess', { class: a.correct ? 'is-right' : 'is-wrong' },
+      el('span.file-guess-who', { text: `${by ? by.name : '?'} accused ${at ? at.name : '?'}` }),
+      el('span.file-guess-cards', { text: `${nameOf(a.meansId)} + ${nameOf(a.clueId)}` }),
+      el('span.file-guess-verdict', { text: a.correct ? 'Correct' : 'Wrong' }));
+  });
+  box.append(
+    el('h4', { text: 'Badges thrown' }),
+    rows.length
+      ? el('ul.file-guesses', null, rows)
+      : el('p.action-note', { text: 'No badge was ever thrown.' }));
+
+  return box;
 }
 
 function rosterRows(view) {

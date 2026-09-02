@@ -158,12 +158,12 @@ async function scenario({ nClients, useAW, pickScientist, label }) {
   sciAct({ type: 'placeBullet', target: 'cause', index: 2 });
   sciAct({ type: 'placeBullet', target: 'place', index: 4 });
   for (const s of g.tiles.scenes) sciAct({ type: 'placeBullet', target: 'scene', slot: s.slot, index: s.slot % 6 });
-  await settle(90);
-  sciAct({ type: 'confirmSetup' });
-  await settle(70);
-  ok(g.phase === PHASE.ROUND, `${label}: round 1 live`);
+  await settle(140);
+  // No confirmation step: the last bullet opens the case.
+  ok(g.phase === PHASE.ROUND, `${label}: last bullet opens the case`);
   ok(clients.every(c => c.view.tiles.cause.bullet === 2), `${label}: bullets replicated to all clients`);
   ok(clients.some(c => c.fx.some(f => f.kind === 'begin')), `${label}: begin fx broadcast`);
+  ok(clients.every(c => Array.isArray(c.view.replacedTiles)), `${label}: replaced-tile record replicated`);
 
   // ---- a wrong badge, resolved by the scientist ----
   const accuser = clients.find(c => c.youId !== g.scientistId && g.player(c.youId).badge === 'held');
@@ -238,9 +238,7 @@ async function scenario({ nClients, useAW, pickScientist, label }) {
       sciAct({ type: 'replaceScene', slot });
       await settle(40);
       sciAct({ type: 'placeBullet', target: 'scene', slot, index: 1 });
-      await settle(40);
-      sciAct({ type: 'confirmReplacement' });
-      await settle(60);
+      await settle(140);   // marking the new tile advances the round by itself
     } else if (holder) {
       const c = asClient(holder.id);
       const susp = g.players.find(p => p.role !== ROLE.SCIENTIST && p.id !== holder.id);
@@ -252,6 +250,8 @@ async function scenario({ nClients, useAW, pickScientist, label }) {
       await settle(50);
       sciAct({ type: 'resolveAccusation' });
       await settle(60);
+      // The host holds a decided ending for a beat before announcing it.
+      if (host.game && host.game.pendingConclusion) await settle(3600);
     } else break;
   }
 

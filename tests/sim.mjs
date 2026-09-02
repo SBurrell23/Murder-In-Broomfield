@@ -108,12 +108,20 @@ function playGame(seed, nPlayers, useAW, style) {
   ok(!g.dispatch(g.scientistId, { type: 'placeBullet', target: 'cause', index: 9 }).ok, 'bullet index bounds enforced');
   g.dispatch(g.scientistId, { type: 'placeBullet', target: 'cause', index: Math.floor(rng() * 6) });
   g.dispatch(g.scientistId, { type: 'placeBullet', target: 'place', index: Math.floor(rng() * 6) });
-  for (const s of g.tiles.scenes) {
+  const scenes = [...g.tiles.scenes];
+  for (const s of scenes.slice(0, -1)) {
     g.dispatch(g.scientistId, { type: 'placeBullet', target: 'scene', slot: s.slot, index: Math.floor(rng() * 6) });
   }
+  // Five of six placed: still in setup, clock not started.
+  ok(g.phase === PHASE.SCIENTIST_SETUP, 'setup holds until every tile is marked');
   ok(g.timerEndsAt === null, 'clock does not run before the case opens');
-  ok(g.dispatch(g.scientistId, { type: 'confirmSetup' }).ok, 'setup confirms once complete');
-  ok(g.phase === PHASE.ROUND && g.round === 1, 'round 1 live');
+
+  // The sixth bullet is the confirmation - placing it opens the case with no
+  // further action required.
+  const last = scenes[scenes.length - 1];
+  g.dispatch(g.scientistId, { type: 'placeBullet', target: 'scene', slot: last.slot, index: Math.floor(rng() * 6) });
+  ok(g.phase === PHASE.ROUND && g.round === 1, 'last bullet opens the case by itself');
+  ok(!g.dispatch(g.scientistId, { type: 'confirmSetup' }).ok, 'confirming again is refused');
 
   // The clock starts only once every bullet is down and the case is opened.
   if (timerSeconds) {
@@ -131,6 +139,10 @@ function playGame(seed, nPlayers, useAW, style) {
   // --- rounds -----------------------------------------------------------
   let guard = 0;
   while (g.phase !== PHASE.OVER && guard++ < 60) {
+    // Stand in for the host's timer: an ending the engine has decided is
+    // applied on the next beat.
+    if (g.pendingConclusion) { g.concludeNow(); continue; }
+
     if (g.phase === PHASE.LAST_CHANCE) {
       const guesser = g.accompliceId && rng() < 0.5 ? g.accompliceId : g.murdererId;
       const candidates = g.players.filter(p => p.role !== ROLE.SCIENTIST && p.id !== g.murdererId && p.id !== g.accompliceId);
@@ -175,6 +187,13 @@ function playGame(seed, nPlayers, useAW, style) {
         ok(res.ok, 'scientist resolves the badge');
         const truth = suspect.id === g.murdererId && mi === meansId && ci === clueId;
         ok(res.correct === truth, 'verdict matches the hidden solution');
+        // A decided ending is held back until the host applies it, so the
+        // verdict has time to land on screen.
+        if (g.pendingConclusion) {
+          ok(g.phase !== PHASE.OVER, 'a decided ending waits to be announced');
+          g.concludeNow();
+          ok(g.phase === PHASE.OVER, 'concludeNow ends the game');
+        }
       }
       continue;
     }
@@ -201,15 +220,17 @@ function playGame(seed, nPlayers, useAW, style) {
     ok(after.tileId !== beforeTile, 'a genuinely new tile is drawn');
     ok(after.bullet === null, 'new tile starts unmarked');
     ok(!g.dispatch(g.scientistId, { type: 'confirmReplacement' }).ok, 'must mark the new tile first');
+    ok(g.replacedTiles.length === g.replacementsUsed + 1, 'the swapped-out tile is recorded');
     // Marking a different, older tile must be refused mid-replacement.
     const otherSlot = g.tiles.scenes.find(s => s.slot !== slot);
     if (otherSlot) {
       ok(!g.dispatch(g.scientistId, { type: 'placeBullet', target: 'scene', slot: otherSlot.slot, index: 0 }).ok,
         'old tiles are locked during a replacement');
     }
-    g.dispatch(g.scientistId, { type: 'placeBullet', target: 'scene', slot, index: Math.floor(rng() * 6) });
     const roundBefore = g.round;
-    ok(g.dispatch(g.scientistId, { type: 'confirmReplacement' }).ok, 'replacement confirms');
+    g.dispatch(g.scientistId, { type: 'placeBullet', target: 'scene', slot, index: Math.floor(rng() * 6) });
+    ok(g.phase !== PHASE.REPLACING, 'marking the new tile advances by itself');
+    ok(!g.dispatch(g.scientistId, { type: 'confirmReplacement' }).ok, 'confirming again is refused');
     // Each new round gets a full clock. (The soak test finishes rounds inside a
     // single millisecond, so compare remaining time rather than the deadline
     // value, which can legitimately repeat.)

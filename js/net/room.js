@@ -228,6 +228,8 @@ export class Host extends Emitter {
   }
 
   restart() {
+    clearTimeout(this._concludeTimer);
+    this._concludeTimer = null;
     this.game = null;
     this.seats.forEach(s => { /* seats persist across cases */ });
     this._pushLobby();
@@ -262,7 +264,24 @@ export class Host extends Emitter {
     // Effects are broadcast so every client animates the same beat.
     this._emitFx(seatId, action, res, before);
     this._pushViews();
+    this._scheduleConclusion();
     return res;
+  }
+
+  // The engine can decide an ending before it announces one, so the verdict
+  // has a beat to land before the game screen is replaced. The host owns the
+  // timer so every client changes screen together.
+  _scheduleConclusion() {
+    if (!this.game || !this.game.pendingConclusion || this._concludeTimer) return;
+    this._concludeTimer = setTimeout(() => {
+      this._concludeTimer = null;
+      if (!this.game || !this.game.concludeNow()) return;
+      const fx = { kind: 'gameOver', winner: this.game.winner };
+      this.t.broadcast({ t: MSG.FX, fx });
+      this.emit('fx', fx);
+      this._pushViews();
+    }, 3200);
+    this._concludeTimer.unref?.();
   }
 
   _emitFx(seatId, action, res, prevPhase) {
@@ -270,6 +289,13 @@ export class Host extends Emitter {
     switch (action.type) {
       case 'placeBullet':
         fx.push({ kind: 'bullet', target: action.target, slot: action.slot ?? null, index: action.index });
+        // The last bullet opens the case or starts the next round, so those
+        // beats are detected from the phase change rather than an action name.
+        if (prevPhase === PHASE.SCIENTIST_SETUP && this.game.phase === PHASE.ROUND) {
+          fx.push({ kind: 'begin' });
+        } else if (prevPhase === PHASE.REPLACING && this.game.phase !== PHASE.REPLACING) {
+          fx.push({ kind: 'round', round: this.game.round });
+        }
         break;
       case 'throwBadge': {
         const a = this.game.pendingAccusation;

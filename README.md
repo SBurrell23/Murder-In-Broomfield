@@ -57,16 +57,24 @@ enable the **Accomplice & Witness** pair.
    Blood Loss, Illness/Disease, Poisoning, Accident.
 3. **Rounds.** The table argues, against the round clock if one is set. At the
    end of a round the Scientist swaps one Scene Tile for a fresh one and marks
-   it. That happens twice, so three rounds. The clock is purely advisory: it
-   restarts each round, and at zero it beeps and nothing else happens.
+   it. That happens twice, so three rounds. Placing the last bullet is itself
+   the confirmation — marking every tile opens the case, and marking a freshly
+   drawn tile starts the next round, so there is no button to press. The clock
+   is purely advisory: it restarts each round, and at zero it beeps and nothing
+   else happens.
 4. **Badges.** Every player except the Scientist carries exactly one badge and
    may throw it at any moment — the Murderer included, and bluffing with it is
    often the right move. A badge names a suspect, a weapon and a piece of
    evidence, and all three must be right.
 5. **Ending.** Investigators win the moment a badge lands. If every badge is
-   spent or three rounds elapse, the Murderer walks. When a Witness is in play
+   spent or three rounds elapse, the Murderer walks — as they also do the
+   moment they are the only player still holding a badge, since nobody can
+   accuse themselves and the case can no longer be solved. The ending is held
+   for a few seconds so the verdict lands before the screen changes. When a Witness is in play
    and a badge does land, the Murderer's side gets one last chance to win by
-   naming the Witness.
+   naming the Witness. The ending screen carries a case file: every scene tile
+   that was ever on the table with the option it was marked on, the two that
+   were swapped out, and every badge thrown with the cards it named.
 
 ---
 

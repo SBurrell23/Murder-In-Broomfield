@@ -75,6 +75,11 @@ export class Game {
     this.pendingAccusation = null;
     this.lastChanceGuess = null;
     this.replacingSlot = null;
+    // Tiles swapped off the table, kept for the post-game case file.
+    this.replacedTiles = [];
+    // A decided-but-not-yet-announced ending, so the verdict can land before
+    // the game screen is pulled away. The host applies it after a beat.
+    this.pendingConclusion = null;
 
     // A per-round advisory clock. It never changes the game state - at zero it
     // simply stops, and the clients beep. Stored as an absolute deadline so
@@ -232,7 +237,38 @@ export class Game {
       }
       s.bullet = index;
     } else return { ok: false, error: 'Bad target' };
+
+    // The last bullet IS the confirmation. Marking every tile opens the case,
+    // and marking a freshly drawn tile starts the next round - there is no
+    // decision left to make at that point, so there is no button for it.
+    if (this.phase === PHASE.SCIENTIST_SETUP && this._allBulletsPlaced()) {
+      this._openCase();
+    } else if (this.phase === PHASE.REPLACING && this.replacingSlot !== null) {
+      const s = this.tiles.scenes.find(x => x.slot === this.replacingSlot);
+      if (s && s.bullet !== null) this._advanceRound();
+    }
     return { ok: true };
+  }
+
+  // Shared by the explicit action and the automatic trigger above.
+  _openCase() {
+    this.phase = PHASE.ROUND;
+    this.round = 1;
+    this._startTimer();
+    this._log('system', 'Round 1 begins. The floor is open.');
+  }
+
+  _advanceRound() {
+    this.replacementsUsed++;
+    this.replacingSlot = null;
+    this.round++;
+    if (this.round > MAX_ROUNDS) {
+      this._end('murderer', 'Three rounds gone. The trail is cold.');
+    } else {
+      this.phase = PHASE.ROUND;
+      this._startTimer();
+      this._log('system', `Round ${this.round} begins.`);
+    }
   }
 
   _allBulletsPlaced() {
@@ -241,14 +277,13 @@ export class Game {
       this.tiles.scenes.every(s => s.bullet !== null);
   }
 
+  // Kept so a client can still ask explicitly; the last bullet normally gets
+  // here first, in which case this is a no-op.
   _confirmSetup(actorId) {
     if (actorId !== this.scientistId) return { ok: false, error: 'Only the Forensic Scientist' };
     if (this.phase !== PHASE.SCIENTIST_SETUP) return { ok: false, error: 'Not in setup' };
     if (!this._allBulletsPlaced()) return { ok: false, error: 'Every tile needs a bullet' };
-    this.phase = PHASE.ROUND;
-    this.round = 1;
-    this._startTimer();
-    this._log('system', 'Round 1 begins. The floor is open.');
+    this._openCase();
     return { ok: true };
   }
 
@@ -308,14 +343,36 @@ export class Game {
     this._log('verdict',
       `WRONG - ${suspect.name} with ${cardName(acc.meansId)} and ${cardName(acc.clueId)} is ruled out.`,
       { correct: false, ...acc });
-    if (this._allBadgesSpent()) {
-      this._end('murderer', 'Every badge spent, and no one saw it. The murderer walks.');
+
+    // The investigators can only win on a badge thrown by someone who is not
+    // the murderer - nobody can accuse themselves. Once the murderer is the
+    // only one still holding one, the case cannot be solved, so it is over.
+    // Held rather than applied, so the verdict has a moment to land first.
+    if (!this._anyoneCanStillWin()) {
+      this.pendingConclusion = this._allBadgesSpent()
+        ? { winner: 'murderer', reason: 'Every badge spent, and no one saw it. The murderer walks.' }
+        : { winner: 'murderer', reason: 'Only the murderer still carries a badge. Nobody left can name them.' };
     }
     return { ok: true, correct: false };
   }
 
   _allBadgesSpent() {
     return this.players.filter(p => p.role !== ROLE.SCIENTIST).every(p => p.badge === 'spent');
+  }
+
+  /** Is any badge left in the hands of someone who could name the murderer? */
+  _anyoneCanStillWin() {
+    return this.players.some(p =>
+      p.role !== ROLE.SCIENTIST && p.badge === 'held' && p.id !== this.murdererId);
+  }
+
+  /** Apply an ending the engine has already decided. Called by the host. */
+  concludeNow() {
+    if (!this.pendingConclusion) return false;
+    const { winner, reason } = this.pendingConclusion;
+    this.pendingConclusion = null;
+    this._end(winner, reason);
+    return true;
   }
 
   // End of round: scientist swaps one scene tile for a fresh one. Twice a game.
@@ -338,6 +395,9 @@ export class Game {
     if (!s) return { ok: false, error: 'No such scene slot' };
 
     const oldId = s.tileId;
+    // Keep the tile and where its bullet sat, so the ending can show the whole
+    // case file rather than only what survived to the last round.
+    this.replacedTiles.push({ slot, tileId: oldId, bullet: s.bullet, round: this.round });
     s.tileId = this.sceneDeck.shift();
     s.bullet = null;
     this.replacingSlot = slot;
@@ -352,17 +412,7 @@ export class Game {
     if (this.replacingSlot === null) return { ok: false, error: 'Pick a tile to replace' };
     const s = this.tiles.scenes.find(x => x.slot === this.replacingSlot);
     if (s.bullet === null) return { ok: false, error: 'Mark the new tile before continuing' };
-
-    this.replacementsUsed++;
-    this.replacingSlot = null;
-    this.round++;
-    if (this.round > MAX_ROUNDS) {
-      this._end('murderer', 'Three rounds gone. The trail is cold.');
-    } else {
-      this.phase = PHASE.ROUND;
-      this._startTimer();
-      this._log('system', `Round ${this.round} begins.`);
-    }
+    this._advanceRound();
     return { ok: true };
   }
 
@@ -416,6 +466,7 @@ export class Game {
       winner: this.winner,
       winReason: this.winReason,
       tiles: JSON.parse(JSON.stringify(this.tiles)),
+      replacedTiles: this.replacedTiles.map(t => ({ ...t })),
       pendingAccusation: this.pendingAccusation ? { ...this.pendingAccusation, correct: undefined } : null,
       accusations: this.accusations.map(a => ({ ...a })),
       lastChanceGuess: this.lastChanceGuess,
