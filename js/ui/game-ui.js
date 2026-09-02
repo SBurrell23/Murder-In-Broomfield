@@ -61,10 +61,14 @@ const clock = { endsAt: null, skew: 0, timer: null, beeped: false, lastPip: null
 // hand on the table.
 let dealt = false;
 
+// Entry count at the last render, so the log only scrolls itself when it grows.
+let lastLogCount = 0;
+
 export function initGameUI(context) { ctx = context; }
 export function resetGameUI() {
   lastPhase = null;
   dealt = false;
+  lastLogCount = 0;
   lastTileIds.clear();
   accuse = { suspectId: null, meansId: null, clueId: null };
   stopClock();
@@ -495,10 +499,20 @@ function renderTable(view) {
 function renderLog(view) {
   const log = $('#log');
   clear(log);
-  // The list is column-reverse, so appending in order puts newest on top.
-  for (const entry of view.log) {
+  // Newest first, so the latest ruling is the first thing read.
+  for (const entry of [...view.log].reverse()) {
     log.append(el('li', { class: 'kind-' + entry.kind, text: entry.text }));
   }
+
+  // Scroll back to the newest entry only when the log actually grew. Doing it
+  // on every render would yank the panel back while someone is reading history
+  // during unrelated state pushes.
+  const grew = view.log.length > lastLogCount;
+  lastLogCount = view.log.length;
+  // Set directly rather than smooth-scrolling: smooth scrolling is driven by
+  // the compositor and simply does not run in a backgrounded tab, and the list
+  // was just rebuilt from scratch so there is no continuity to animate.
+  if (grew) log.scrollTop = 0;
 }
 
 function renderActions(view) {

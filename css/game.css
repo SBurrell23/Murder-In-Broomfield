@@ -386,7 +386,10 @@
 .log {
   list-style: none; margin: 0; padding: 0 .45rem 0 0;
   max-height: 330px; overflow-y: auto;
-  display: flex; flex-direction: column-reverse; gap: .5rem;
+  /* Normal flow with newest first in the DOM. column-reverse inverts scrollTop
+     and the semantics differ between engines, which makes "scroll to the top"
+     unreliable; this way top is simply 0. */
+  display: flex; flex-direction: column; gap: .5rem;
   font-size: .88rem;
   /* Firefox */
   scrollbar-width: thin;
