@@ -529,8 +529,18 @@ function fitTable() {
     - card.getBoundingClientRect().height * 2;
 
   const top = host.getBoundingClientRect().top;
-  const available = window.innerHeight - top - 26;  // leave the page margin
+  // Read the screen's real bottom padding rather than guessing it. The guess
+  // was 26px against an actual 32px, which is exactly the sliver of scroll
+  // that survived.
+  const screen = document.getElementById('screen-game');
+  const padBottom = screen ? parseFloat(getComputedStyle(screen).paddingBottom) || 0 : 0;
+  const available = window.innerHeight - top - padBottom - 2;   // 2px safety
   const tableW = host.getBoundingClientRect().width;
+
+  // A hidden or not-yet-laid-out pane reports a zero-height viewport, which
+  // would collapse every card to the minimum. Leave the current size alone and
+  // let the resize handler fit it once there is a real viewport to fit to.
+  if (!(available > 120) || !(tableW > 120)) return;
 
   // Two seat rows give each hand a wider column, but halve the height it can
   // use. On a short screen that trade goes badly, so try both arrangements and
@@ -556,10 +566,20 @@ function fitTable() {
     ? fitting.reduce((a, b) => (b.w > a.w ? b : a))
     : candidates.reduce((a, b) => (b.usedH < a.usedH ? b : a));
 
-  const w = best.w;
+  let w = best.w;
   host.style.setProperty('--seat-card-w', Math.floor(w) + 'px');
   // A single row is the fallback when the two-row shape cannot pay for itself.
   host.classList.toggle('is-one-row', best.rows === 1 && seats > 3);
+
+  // The arithmetic above works from measured chrome, which shifts by a pixel
+  // or two as the cards resize. Rather than chase that, verify against the
+  // real page height and trim until it genuinely fits.
+  for (let i = 0; i < 4; i++) {
+    const over = document.documentElement.scrollHeight - window.innerHeight;
+    if (over <= 0 || w <= CARD_MIN) break;
+    w = Math.max(CARD_MIN, w - Math.max(1, Math.ceil(over / (2 * best.rows * CARD_RATIO))));
+    host.style.setProperty('--seat-card-w', Math.floor(w) + 'px');
+  }
 }
 
 // Re-fit when the window changes shape. Deliberately a timer rather than

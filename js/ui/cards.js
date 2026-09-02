@@ -167,6 +167,7 @@ function previewNode() {
 
 function showPreview(item, kind, anchor) {
   const box = previewNode();
+  // Class first so the sizing rules apply before anything is measured.
   box.className = 'card-preview is-on ' + (kind === 'means' ? 'card-means' : 'card-clue');
   box.innerHTML = '';
   const img = el('img', { alt: '', src: artFor(item, kind) });
@@ -178,13 +179,21 @@ function showPreview(item, kind, anchor) {
   box.append(img);
 
   // Sit beside the card, flipped or nudged to stay on screen.
+  // Measure the preview rather than assuming its size. These were hard-coded
+  // and went stale when the preview grew, so the clamp used a height barely
+  // three quarters of the real one and let it run off the bottom of the screen.
   const r = anchor.getBoundingClientRect();
-  const W = 200, H = 260, pad = 12;
+  const W = box.offsetWidth || 260;
+  const H = box.offsetHeight || Math.round(W * 1.3);
+  const pad = 12, edge = 10;
+
   let left = r.right + pad;
-  if (left + W > window.innerWidth - 8) left = r.left - W - pad;
-  if (left < 8) left = Math.min(Math.max(8, r.left), window.innerWidth - W - 8);
+  if (left + W > window.innerWidth - edge) left = r.left - W - pad;
+  left = Math.min(Math.max(edge, left), Math.max(edge, window.innerWidth - W - edge));
+
   let top = r.top + r.height / 2 - H / 2;
-  top = Math.min(Math.max(8, top), window.innerHeight - H - 8);
+  top = Math.min(Math.max(edge, top), Math.max(edge, window.innerHeight - H - edge));
+
   box.style.left = Math.round(left) + 'px';
   box.style.top = Math.round(top) + 'px';
 }
