@@ -247,15 +247,29 @@
 .table.is-one-row { grid-template-columns: repeat(var(--seat-count, 4), minmax(0, 1fr)) !important; }
 .table.is-one-row > .seat-card { grid-column: auto !important; }
 
+/* 7 players -> 6 hands, three and three. */
+.table[data-seats="6"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* 8 players -> 7 hands, four above and three centred below, all equal width. */
+.table[data-seats="7"] { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+.table[data-seats="7"] > .seat-card:nth-child(-n+4) { grid-column: span 2; }
+.table[data-seats="7"] > .seat-card:nth-child(5) { grid-column: 2 / span 2; }
+.table[data-seats="7"] > .seat-card:nth-child(6) { grid-column: 4 / span 2; }
+.table[data-seats="7"] > .seat-card:nth-child(7) { grid-column: 6 / span 2; }
+
 @media (max-width: 1080px) {
   .table[data-seats="3"],
-  .table[data-seats="5"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .table[data-seats="5"] > .seat-card { grid-column: auto !important; }
+  .table[data-seats="5"],
+  .table[data-seats="6"],
+  .table[data-seats="7"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .table[data-seats="5"] > .seat-card,
+  .table[data-seats="7"] > .seat-card { grid-column: auto !important; }
 }
 @media (max-width: 700px) {
   .table[data-seats="3"],
   .table[data-seats="4"],
-  .table[data-seats="5"] { grid-template-columns: minmax(0, 1fr); }
+  .table[data-seats="5"],
+  .table[data-seats="6"],
+  .table[data-seats="7"] { grid-template-columns: minmax(0, 1fr); }
 }
 
 .seat-card {

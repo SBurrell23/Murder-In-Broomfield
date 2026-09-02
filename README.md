@@ -1,6 +1,6 @@
 # Murder In Broomfield
 
-A browser-based social deduction game for four to six players, in the spirit of
+A browser-based social deduction game for four to eight players, in the spirit of
 *Deception: Murder in Hong Kong*. One player is the Forensic Scientist who knows
 everything and may say nothing. One player is the Murderer, whose weapon and
 evidence are already sitting face up on the table. Everybody else has to work it
@@ -29,11 +29,22 @@ Then open `http://localhost:8734`.
 
 One player presses **Open A Case** and shares the four-character room code (the
 code chip copies an invite link). Everyone else presses **Join A Case**. With
-four to six players seated, the host begins.
+four to eight players seated, the host begins.
 
 The host can pin a specific player as Forensic Scientist or leave it to chance,
-set the **round timer** (three minutes by default, or off), and at six players can
-enable the **Accomplice & Witness** pair.
+and set the **round timer** (three minutes by default, or off).
+
+The **Accomplice & Witness** are a pair, since neither role makes sense without
+the other. At six players they are the host's choice; from seven up they are
+always dealt, and the lobby switch shows as on and locked.
+
+| Players | Scientist | Murderer | Accomplice | Witness | Investigators |
+| --- | --- | --- | --- | --- | --- |
+| 4 | 1 | 1 | — | — | 2 |
+| 5 | 1 | 1 | — | — | 3 |
+| 6 | 1 | 1 | optional | optional | 4, or 2 with the pair |
+| 7 | 1 | 1 | 1 | 1 | 3 |
+| 8 | 1 | 1 | 1 | 1 | 4 |
 
 ### Roles
 
@@ -162,7 +173,7 @@ js/
   audio/              synthesized effects · music buses
   ui/                 dom · cards · fx · game-ui
   main.js             title, lobby, session wiring, rain
-tools/                image fetcher · manifest builder · art review contact sheet
+tools/                image fetcher · manifest builder · card art sheet · tile review
 tests/                headless rules and netcode suites
 ```
 
@@ -185,6 +196,7 @@ Players who drop keep their seat and can reclaim it with a stored token; the
 node tests/check-data.mjs   # deck integrity: counts, unique ids, 6 options per tile
 node tests/sim.mjs          # 1200 randomised full games through the real engine
 node tests/net-sim.mjs      # Host + Clients over a lossy, reordering transport
+node tests/check-art.mjs    # card art: coverage, duplicates, unsafe markup
 ```
 
 `sim.mjs` asserts role composition, hand disjointness, view scoping, badge

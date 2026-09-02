@@ -9,7 +9,7 @@ import { audio } from './audio/sfx.js';
 import { music } from './audio/music.js';
 import { StreetScene } from './art/street.js';
 
-const MIN_PLAYERS = 4, MAX_PLAYERS = 6;
+const MIN_PLAYERS = 4, MAX_PLAYERS = 8, AUTO_PAIR_AT = 7, PAIR_MIN = 6;
 
 let session = null;   // { isHost, host?, client?, act, restart, leave }
 let lobbyState = null;
@@ -325,9 +325,18 @@ function renderLobby() {
     lobbyState.players.forEach(p => sel.append(el('option', { value: p.id, text: p.name })));
     sel.value = prev;
 
+    // The pair is the lobby's choice at six and automatic from seven up, so
+    // the switch shows as on and locked once the table is that big.
     const aw = $('#toggle-aw');
-    aw.checked = !!lobbyState.settings.useAccompliceWitness;
-    aw.disabled = n < 6;
+    const forced = n >= AUTO_PAIR_AT;
+    aw.checked = forced || !!lobbyState.settings.useAccompliceWitness;
+    aw.disabled = forced || n < PAIR_MIN;
+    const note = $('#aw-note');
+    if (note) {
+      note.textContent = forced
+        ? `Always in play at ${AUTO_PAIR_AT} players or more.`
+        : `Requires ${PAIR_MIN} players. Adds a partner for the murderer and a witness who saw two figures in the dark.`;
+    }
 
     const tm = $('#select-timer');
     tm.value = String(lobbyState.settings.timerMinutes ?? 3);

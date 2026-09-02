@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene Tile Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Cormorant+Garamond:wght@400;600&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d0c11; --line: #2e2b36; --line-soft: #221f2a;
+    --paper: #d8cbae; --text: #d9d3c6; --text-dim: #9a9384; --text-faint: #6b6558;
+    --brass: #c9a227; --brass-dim: #8a6f1c;
+    --blood: #8e1f1f; --steel: #4a6b82; --amber: #d08a2c;
+    color-scheme: dark;
+  }
+  body {
+    margin: 0; padding: 1.4rem 1.4rem 5rem;
+    background: var(--ink); color: var(--text);
+    font: 15px/1.5 'Cormorant Garamond', Georgia, serif;
+  }
+  h1 { font-family: 'Cinzel', Georgia, serif; font-size: 1.4rem; letter-spacing: .06em; margin: 0 0 .3rem; }
+  .lede { color: var(--text-dim); max-width: 70ch; margin-bottom: 1.2rem; }
+  code { background: #1b1a22; padding: .1em .4em; border-radius: 3px; font-size: .88em; }
+
+  .bar {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; gap: .6rem; align-items: center; flex-wrap: wrap;
+    background: #0d0c11ee; backdrop-filter: blur(6px);
+    padding: .7rem 0; margin-bottom: 1rem; border-bottom: 1px solid var(--line);
+  }
+  button, select {
+    font: inherit; font-size: .85rem;
+    background: #1e1c25; color: var(--text);
+    border: 1px solid #3a3644; border-radius: 4px; padding: .4rem .85rem; cursor: pointer;
+  }
+  button:hover, select:hover { border-color: var(--brass); }
+  .count { margin-left: auto; color: var(--text-dim); font-size: .85rem; font-family: 'Special Elite', monospace; }
+
+  h2 {
+    font-family: 'Special Elite', monospace;
+    font-size: .74rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--brass); font-weight: normal; margin: 1.9rem 0 .8rem;
+    display: flex; align-items: baseline; gap: .7rem;
+  }
+  h2 .n { color: var(--text-faint); letter-spacing: .1em; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: .8rem; }
+
+  /* The tiles are drawn to match the board so a review reflects the real thing. */
+  .tile {
+    position: relative;
+    background: linear-gradient(172deg, #efe4c8 0%, #ddceac 48%, #c9b892 100%);
+    border: 1px solid rgba(0,0,0,.35);
+    border-radius: 3px;
+    padding: .45rem .5rem .5rem;
+    color: #16120c;
+    box-shadow: 0 8px 22px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.35) inset;
+  }
+  .tile.cause { border-top: 3px solid var(--blood); }
+  .tile.place { border-top: 3px solid var(--steel); }
+  .tile.scene { border-top: 3px solid var(--amber); }
+
+  .tile-head {
+    display: flex; align-items: center; justify-content: space-between; gap: .4rem;
+    border-bottom: 1.5px solid rgba(20,16,12,.45);
+    padding-bottom: .3rem; margin-bottom: .38rem;
+  }
+  .tile-title {
+    font-family: 'Cinzel', Georgia, serif; font-weight: 700;
+    font-size: .74rem; letter-spacing: .05em; text-transform: uppercase;
+    color: #1d1710; line-height: 1.15;
+  }
+  .tile-id {
+    font-family: 'Special Elite', monospace; font-size: .58rem;
+    color: #7a6a4e; letter-spacing: .08em;
+  }
+  .tile ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; counter-reset: opt; }
+  .tile li {
+    display: flex; align-items: baseline; gap: .45rem;
+    padding: .16rem .2rem;
+    font-size: .88rem; line-height: 1.2; color: #2a2218;
+  }
+  .tile li::before {
+    counter-increment: opt; content: counter(opt);
+    font-family: 'Special Elite', monospace; font-size: .6rem;
+    color: #8a7a5c; min-width: .9em;
+  }
+  .tile.wide { grid-column: span 2; }
+
+  .warn { color: #e07a7a; }
+  .empty { color: var(--text-faint); font-style: italic; }
+</style>
+</head>
+<body>
+
+<h1>Scene Tile Review</h1>
+<p class="lede">
+  Every case-file tile in the deck, drawn as it appears on the board. Use this to
+  read the whole set before adding more. Tiles live in
+  <code>js/data/tiles.js</code>; each needs exactly six options, and the checker
+  in the bar flags any that do not.
+</p>
+
+<div class="bar">
+  <select id="filter">
+    <option value="all">All tiles</option>
+    <option value="cause">Cause of Death</option>
+    <option value="place">Location of Crime</option>
+    <option value="scene">Scene Tiles</option>
+  </select>
+  <select id="sort">
+    <option value="deck">Deck order</option>
+    <option value="title">By title</option>
+  </select>
+  <button id="copy">Copy as text</button>
+  <span class="count" id="count"></span>
+</div>
+
+<div id="body"></div>
+
+<script type="module">
+import { CAUSE_OF_DEATH, LOCATIONS, SCENE_TILES } from '../js/data/tiles.js';
+
+const GROUPS = [
+  ['cause', 'Cause of Death', CAUSE_OF_DEATH,
+   'Fixed for every game. The same six options every time, so the table learns to read it at a glance.'],
+  ['place', 'Location of Crime', LOCATIONS,
+   'One is drawn per game.'],
+  ['scene', 'Scene Tiles', SCENE_TILES,
+   'Four are in play at once; two of them get swapped out over the three rounds.']
+];
+
+function tileEl(t, kind) {
+  const wrap = document.createElement('div');
+  wrap.className = 'tile ' + kind;
+
+  const head = document.createElement('div');
+  head.className = 'tile-head';
+  const title = document.createElement('div');
+  title.className = 'tile-title';
+  title.textContent = t.title + (t.subtitle ? ` — ${t.subtitle}` : '');
+  const id = document.createElement('span');
+  id.className = 'tile-id';
+  id.textContent = t.id;
+  head.append(title, id);
+
+  const list = document.createElement('ol');
+  for (const opt of t.options) {
+    const li = document.createElement('li');
+    li.textContent = opt;
+    list.append(li);
+  }
+  wrap.append(head, list);
+
+  if (t.options.length !== 6) {
+    const warn = document.createElement('div');
+    warn.className = 'warn';
+    warn.textContent = `${t.options.length} options — should be 6`;
+    wrap.append(warn);
+  }
+  return wrap;
+}
+
+function render() {
+  const filter = document.querySelector('#filter').value;
+  const sort = document.querySelector('#sort').value;
+  const body = document.querySelector('#body');
+  body.innerHTML = '';
+
+  let shown = 0, bad = 0;
+  for (const [kind, label, tiles, note] of GROUPS) {
+    if (filter !== 'all' && filter !== kind) continue;
+    const list = sort === 'title'
+      ? [...tiles].sort((a, b) => a.title.localeCompare(b.title))
+      : tiles;
+
+    const h = document.createElement('h2');
+    h.innerHTML = `${label} <span class="n">${tiles.length} tile${tiles.length === 1 ? '' : 's'} · ${note}</span>`;
+    body.append(h);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    for (const t of list) {
+      grid.append(tileEl(t, kind));
+      shown++;
+      if (t.options.length !== 6) bad++;
+    }
+    body.append(grid);
+  }
+
+  const total = GROUPS.reduce((n, g) => n + g[2].length, 0);
+  document.querySelector('#count').textContent =
+    `${shown} shown of ${total}` + (bad ? ` · ${bad} with the wrong option count` : ' · all have six options');
+}
+
+document.querySelector('#filter').addEventListener('change', render);
+document.querySelector('#sort').addEventListener('change', render);
+document.querySelector('#copy').addEventListener('click', async () => {
+  const text = GROUPS.map(([, label, tiles]) =>
+    `== ${label} ==\n` + tiles.map(t =>
+      `${t.id}  ${t.title}${t.subtitle ? ' — ' + t.subtitle : ''}\n` +
+      t.options.map((o, i) => `    ${i + 1}. ${o}`).join('\n')
+    ).join('\n\n')
+  ).join('\n\n');
+  const btn = document.querySelector('#copy');
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = 'Copied';
+  } catch {
+    btn.textContent = 'Copy blocked';
+  }
+  setTimeout(() => { btn.textContent = 'Copy as text'; }, 1500);
+});
+
+render();
+</script>
+</body>
+</html>

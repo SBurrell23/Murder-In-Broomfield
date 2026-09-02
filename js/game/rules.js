@@ -37,17 +37,35 @@ export const PHASE = {
 export const HAND_SIZE = 4;
 export const SCENE_TILES_IN_PLAY = 4;
 export const MAX_ROUNDS = 3;
-export const MAX_PLAYERS = 6;
+export const MAX_PLAYERS = 8;
 export const MIN_PLAYERS = 4;
 
-// Which roles exist at each player count. Accomplice and Witness are a pair and
-// are only dealt when the lobby enables them and the table is big enough.
+// The table size at which the Accomplice and Witness stop being optional.
+export const AUTO_PAIR_AT = 7;
+// Below this they cannot be dealt at all - the pair costs two investigators.
+export const PAIR_MIN = 6;
+
+/**
+ * Which roles exist at each player count.
+ *
+ * The Accomplice and Witness are a pair: the Accomplice knows the murderer, and
+ * the Witness saw two people move without knowing which was which, so neither
+ * makes sense without the other. At six players they are the lobby's choice; at
+ * seven and above the table is big enough that they are always dealt.
+ */
 export function roleLineup(playerCount, opts = {}) {
   const roles = [ROLE.SCIENTIST, ROLE.MURDERER];
-  const wantsPair = !!opts.useAccompliceWitness && playerCount >= 6;
-  if (wantsPair) roles.push(ROLE.ACCOMPLICE, ROLE.WITNESS);
+  if (pairIsDealt(playerCount, opts.useAccompliceWitness)) {
+    roles.push(ROLE.ACCOMPLICE, ROLE.WITNESS);
+  }
   while (roles.length < playerCount) roles.push(ROLE.INVESTIGATOR);
   return roles.slice(0, playerCount);
+}
+
+/** Whether this table gets the Accomplice and Witness. */
+export function pairIsDealt(playerCount, optIn) {
+  if (playerCount >= AUTO_PAIR_AT) return true;
+  return !!optIn && playerCount >= PAIR_MIN;
 }
 
 export class Game {

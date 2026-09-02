@@ -77,6 +77,10 @@ async function scenario({ nClients, useAW, pickScientist, label }) {
   const views = new Map();
   for (const c of clients) views.set(c.youId, c.view);
   ok(clients.every(c => c.view), `${label}: every client received a view`);
+  if (nClients + 1 >= 7) {
+    ok(g.accompliceId && g.witnessId,
+      `${label}: accomplice and witness dealt automatically at ${nClients + 1}`);
+  }
 
   for (const c of clients) {
     const v = c.view;
@@ -262,7 +266,7 @@ async function scenario({ nClients, useAW, pickScientist, label }) {
   ok(clients.some(c => c.fx.some(f => f.kind === 'gameOver')), `${label}: gameOver fx broadcast`);
 
   // ---- room full ----
-  if (nClients + 1 === 6) {
+  if (nClients + 1 === 8) {
     const extraT = new LoopbackTransport(hub, 'extra');
     const extra = new Client(extraT, { name: 'Latecomer' });
     extra._explicitToken = true;
@@ -270,7 +274,7 @@ async function scenario({ nClients, useAW, pickScientist, label }) {
     extra.on('error', m => extra.errors.push(m));
     await extra.join(code);
     await settle(90);
-    ok(host.seats.length === 6, `${label}: seventh player refused`);
+    ok(host.seats.length === 8, `${label}: ninth player refused`);
     ok(extra.errors.length > 0, `${label}: latecomer told the room is closed`);
     extra.destroy();
   }
@@ -283,7 +287,9 @@ const cases = [
   { nClients: 3, useAW: false, pickScientist: false, label: '4p random-scientist' },
   { nClients: 4, useAW: false, pickScientist: true,  label: '5p chosen-scientist' },
   { nClients: 5, useAW: true,  pickScientist: true,  label: '6p accomplice+witness' },
-  { nClients: 5, useAW: false, pickScientist: false, label: '6p no-pair' }
+  { nClients: 5, useAW: false, pickScientist: false, label: '6p no-pair' },
+  { nClients: 6, useAW: false, pickScientist: false, label: '7p pair is automatic' },
+  { nClients: 7, useAW: false, pickScientist: true,  label: '8p full table' }
 ];
 
 for (const c of cases) {

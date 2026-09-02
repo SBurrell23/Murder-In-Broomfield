@@ -2,7 +2,7 @@
 // the real engine and asserts the invariants that matter, including the ones a
 // cheating client would try to break.
 
-import { Game, PHASE, ROLE, MAX_ROUNDS } from '../js/game/rules.js';
+import { Game, PHASE, ROLE, MAX_ROUNDS, pairIsDealt } from '../js/game/rules.js';
 import { makeRng } from '../js/util/rng.js';
 
 let checks = 0, failures = [];
@@ -30,9 +30,15 @@ function playGame(seed, nPlayers, useAW, style) {
   ok(roles.filter(r => r === ROLE.SCIENTIST).length === 1, 'exactly one scientist');
   ok(roles.filter(r => r === ROLE.MURDERER).length === 1, 'exactly one murderer');
   ok(g.players.length === nPlayers, 'player count preserved');
-  const expectPair = useAW && nPlayers >= 6;
+  const expectPair = pairIsDealt(nPlayers, useAW);
   ok(!!g.accompliceId === expectPair, `accomplice presence matches config (n=${nPlayers})`);
   ok(!!g.witnessId === expectPair, `witness presence matches config (n=${nPlayers})`);
+  if (nPlayers >= 7) {
+    ok(expectPair, `pair is automatic at ${nPlayers} players`);
+    ok(g.accompliceId && g.witnessId, `accomplice and witness both dealt at ${nPlayers}`);
+    ok(g.accompliceId !== g.witnessId && g.accompliceId !== g.murdererId,
+      'accomplice, witness and murderer are three different people');
+  }
 
   // --- hands are disjoint and correctly sized ---------------------------
   const seenMeans = new Set(), seenClues = new Set();
@@ -144,12 +150,33 @@ function playGame(seed, nPlayers, useAW, style) {
     if (g.pendingConclusion) { g.concludeNow(); continue; }
 
     if (g.phase === PHASE.LAST_CHANCE) {
+      // Only reachable when a witness is in play and a badge landed.
+      ok(!!g.witnessId, 'last chance only happens with a witness in play');
+      ok(g.accusations.some(a => a.correct), 'last chance follows a correct badge');
+
       const guesser = g.accompliceId && rng() < 0.5 ? g.accompliceId : g.murdererId;
       const candidates = g.players.filter(p => p.role !== ROLE.SCIENTIST && p.id !== g.murdererId && p.id !== g.accompliceId);
-      const target = candidates[Math.floor(rng() * candidates.length)];
-      ok(!g.dispatch(g.scientistId, { type: 'guessWitness', targetId: target.id }).ok,
+      ok(candidates.some(p => p.id === g.witnessId), 'the witness is among the candidates');
+
+      ok(!g.dispatch(g.scientistId, { type: 'guessWitness', targetId: g.witnessId }).ok,
         'scientist cannot make the last-chance guess');
-      g.dispatch(guesser, { type: 'guessWitness', targetId: target.id });
+      const investigator = g.players.find(p => p.role === ROLE.INVESTIGATOR);
+      if (investigator) {
+        ok(!g.dispatch(investigator.id, { type: 'guessWitness', targetId: g.witnessId }).ok,
+          'an investigator cannot make the last-chance guess');
+      }
+
+      // Half the time name the witness correctly, to exercise both endings.
+      const nameTheWitness = rng() < 0.5;
+      const target = nameTheWitness
+        ? g.player(g.witnessId)
+        : candidates.find(p => p.id !== g.witnessId) || g.player(g.witnessId);
+      const res = g.dispatch(guesser, { type: 'guessWitness', targetId: target.id });
+      ok(res.ok, 'the murderer side may name the witness');
+      ok(res.correct === (target.id === g.witnessId), 'last-chance verdict matches the real witness');
+      ok(g.phase === PHASE.OVER, 'naming the witness ends the game either way');
+      ok(g.winner === (target.id === g.witnessId ? 'murderer' : 'investigators'),
+        'naming the witness correctly steals the win, naming wrong loses it');
       break;
     }
 
@@ -273,7 +300,7 @@ const tally = { investigators: 0, murderer: 0 };
 const styles = ['trigger-happy', 'cagey'];
 let games = 0;
 for (let seed = 1; seed <= 1200; seed++) {
-  const n = 4 + (seed % 3);              // 4, 5, 6
+  const n = 4 + (seed % 5);              // 4 through 8
   const useAW = seed % 2 === 0;
   const style = styles[seed % styles.length];
   try {
