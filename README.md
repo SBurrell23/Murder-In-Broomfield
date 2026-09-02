@@ -165,7 +165,7 @@ or `assets/audio/main-game-music.mp3` (in game).
 index.html            screens, modals and the effect stage
 css/                  main (theme, shell) · game (board) · animations
 js/
-  data/               means (100) · clues (100) · tiles (1 fixed cause, 5 location, 20 scene)
+  data/               means (100) · clues (100) · tiles (1 fixed cause, 10 location, 40 scene)
   game/rules.js       authoritative rules engine — pure, no DOM, no network
   net/net.js          PeerJS transport, plus an in-process loopback for tests
   net/room.js         Host (authority) and Client (view consumer)
@@ -194,6 +194,7 @@ Players who drop keep their seat and can reclaim it with a stored token; the
 
 ```bash
 node tests/check-data.mjs   # deck integrity: counts, unique ids, 6 options per tile
+node tests/check-tiles.mjs  # scene tiles: option length, catch-alls, and duds
 node tests/sim.mjs          # 1200 randomised full games through the real engine
 node tests/net-sim.mjs      # Host + Clients over a lossy, reordering transport
 node tests/check-art.mjs    # card art: coverage, duplicates, unsafe markup
@@ -204,6 +205,15 @@ accounting, replacement limits, win conditions, and that illegal actions are
 refused. `net-sim.mjs` runs the real `Host` and `Client` classes over a loopback
 transport with latency and jitter, covering seating, per-seat view isolation,
 forged actions, mid-game reconnect, room-full handling and complete games.
+
+`check-tiles.mjs` guards the scene deck against **duds** — tiles whose options
+the Forensic Scientist cannot point at, because they turn on a state of mind or a
+hearsay account rather than on something physically true of the weapon or the
+evidence. It scores every tile against the vocabulary of the 200 cards, caps
+option length so nothing wraps badly on a narrow tile, limits how often a tile
+leans on a "Nothing at all" answer, and keeps the tiles that were cut for being
+duds as a regression fixture, so the check fails if it ever goes soft. Read the
+whole deck as it appears on the board at `/tools/tiles.html`.
 
 ---
 

@@ -18,6 +18,11 @@ report('CAUSE_OF_DEATH', CAUSE_OF_DEATH, x => x.id);
 report('LOCATIONS     ', LOCATIONS, x => x.id);
 report('SCENE_TILES   ', SCENE_TILES, x => x.id);
 
+const expect = (label, got, want) =>
+  console.log(`${label}: ${got}` + (got === want ? `  OK` : `  EXPECTED ${want}`));
+expect('deck sizes    ', `${CAUSE_OF_DEATH.length} cause / ${LOCATIONS.length} location / ${SCENE_TILES.length} scene`,
+       '1 cause / 10 location / 40 scene');
+
 const allTiles = [...CAUSE_OF_DEATH, ...LOCATIONS, ...SCENE_TILES];
 const bad = allTiles.filter(t => !Array.isArray(t.options) || t.options.length !== 6);
 console.log(bad.length ? `TILES WITH != 6 OPTIONS: ${bad.map(t => t.id + '(' + t.options.length + ')')}` : 'All tiles have exactly 6 options  OK');

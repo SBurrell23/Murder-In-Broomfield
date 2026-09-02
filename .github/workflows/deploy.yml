@@ -30,10 +30,14 @@ jobs:
       # engine and the real netcode headlessly.
       - name: Deck integrity
         run: node tests/check-data.mjs
+      - name: Scene tile vetting
+        run: node tests/check-tiles.mjs
       - name: Rules engine (1200 randomised games)
         run: node tests/sim.mjs
       - name: Netcode (host + clients over a reordering transport)
         run: node tests/net-sim.mjs
+      - name: Card art
+        run: node tests/check-art.mjs
 
   build:
     name: Build Pages artifact
