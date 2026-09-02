@@ -14,7 +14,7 @@
     "head  head"
     "board side"
     "table side";
-  gap: 1rem 1.2rem;
+  gap: .7rem 1rem;
   align-items: start;
 }
 
@@ -116,7 +116,7 @@
   background: rgba(0,0,0,.28);
   border: 1px solid var(--line-soft);
   border-radius: var(--r-md);
-  padding: 1rem;
+  padding: .55rem;
 }
 
 /* All six tiles read as one row - the board is meant to be scanned across in a
@@ -133,7 +133,7 @@
   position: relative;
   background: linear-gradient(172deg, #efe4c8 0%, #ddceac 48%, #c9b892 100%);
   border-radius: var(--r-sm);
-  padding: .45rem .42rem .42rem;
+  padding: .38rem .36rem .36rem;
   color: #16120c;
   box-shadow: 0 8px 22px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.35) inset;
   animation: tile-in .5s var(--ease);
@@ -152,7 +152,7 @@
 .tile-head {
   display: flex; align-items: center; justify-content: space-between; gap: .4rem;
   border-bottom: 1.5px solid rgba(20,16,12,.45);
-  padding-bottom: .35rem; margin-bottom: .45rem;
+  padding-bottom: .26rem; margin-bottom: .34rem;
 }
 .tile-title {
   font-family: var(--display); font-weight: 700;
@@ -176,8 +176,8 @@
 .tile-opt {
   position: relative;
   display: flex; align-items: center; gap: .32rem;
-  padding: .22rem .26rem;
-  font-size: .79rem; line-height: 1.18;
+  padding: .17rem .24rem;
+  font-size: .77rem; line-height: 1.14;
   color: #2a2218;
   border-radius: 2px;
   border: 1px solid transparent;
@@ -242,6 +242,11 @@
 .table[data-seats="5"] > .seat-card:nth-child(4) { grid-column: 2 / span 2; }
 .table[data-seats="5"] > .seat-card:nth-child(5) { grid-column: 4 / span 2; }
 
+/* Chosen by fitTable when two rows would force the cards too small: everyone
+   in one row, narrower but taller. */
+.table.is-one-row { grid-template-columns: repeat(var(--seat-count, 4), minmax(0, 1fr)) !important; }
+.table.is-one-row > .seat-card { grid-column: auto !important; }
+
 @media (max-width: 1080px) {
   .table[data-seats="3"],
   .table[data-seats="5"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -258,7 +263,7 @@
   border: 1px solid var(--line-soft);
   border-left: 3px solid var(--line);
   border-radius: var(--r-md);
-  padding: .75rem .9rem;
+  padding: .5rem .6rem .55rem;
   transition: border-color .25s, box-shadow .25s, transform .2s var(--ease);
 }
 .seat-card.is-you { border-left-color: var(--brass); box-shadow: 0 0 0 1px rgba(201,162,39,.14); }
@@ -269,7 +274,7 @@
 .seat-card.is-target:hover { transform: translateX(3px); border-left-color: var(--blood-lit); }
 
 .seat-card-head {
-  display: flex; align-items: center; gap: .6rem; margin-bottom: .6rem; flex-wrap: wrap;
+  display: flex; align-items: center; gap: .5rem; margin-bottom: .38rem; flex-wrap: wrap;
 }
 .seat-card-name {
   font-family: var(--display); font-size: 1rem; font-weight: 700;
@@ -293,10 +298,19 @@
   font-family: var(--type); font-size: .5rem; letter-spacing: .1em;
   text-transform: uppercase; color: var(--text-faint); line-height: 1.2;
 }
-/* A hand is four cards on one line. Wrapping made the fourth card look like it
-   belonged to the row below. */
-.hand-cards { display: flex; gap: .3rem; flex-wrap: nowrap; flex: 1; min-width: 0; }
-.hand-cards .card { flex: 1 1 0; min-width: 0; width: auto; max-width: 110px; }
+/* A hand is four cards on one line, centred in the seat. Card size comes from
+   --seat-card-w, which fitTable() computes from the height actually available
+   so the whole board fits without the page scrolling. Cards do not grow, or
+   they would stretch to fill and centring would be meaningless. */
+.hand-cards {
+  display: flex; gap: .3rem; flex-wrap: nowrap; flex: 1; min-width: 0;
+  justify-content: center;
+}
+.hand-cards .card {
+  flex: 0 1 var(--seat-card-w, 96px);
+  min-width: 0; width: auto;
+  max-width: var(--seat-card-w, 96px);
+}
 
 /* ------------------------------------------------------------ cards ---- */
 

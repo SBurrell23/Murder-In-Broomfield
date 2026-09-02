@@ -493,8 +493,84 @@ function renderTable(view) {
   // Row shape by table size: 3 card-holders sit in one row; 4 split 2 + 2 so
   // each is wider; 5 split 3 + 2. Left to auto-fit these wrapped awkwardly.
   host.dataset.seats = String(host.children.length);
+  host.style.setProperty('--seat-count', String(host.children.length));
   dealt = true;
+  // Synchronous: reading a rect inside fitTable forces layout, so the numbers
+  // are valid immediately and this works in a background tab.
+  fitTable();
 }
+
+/**
+ * Size the hand cards so the board, the table and every hand fit the viewport
+ * without the page scrolling.
+ *
+ * The seat width alone cannot decide this: at five players the two-row layout
+ * gives each seat a wide column, which made the cards big enough to push the
+ * page into a scroll. So the card height is derived from the vertical space
+ * actually left under the board, and the width follows from the card ratio.
+ */
+const CARD_RATIO = 130 / 100;   // plates are 100x130
+const CARD_MIN = 56, CARD_MAX = 118;
+
+function fitTable() {
+  const host = $('#table');
+  const seat = host && host.querySelector('.seat-card');
+  const card = seat && seat.querySelector('.card');
+  if (!card) return;
+
+  const seats = host.children.length;
+  const gap = 13;                                   // the .8rem grid gap
+  const cardGap = 5;                                // .3rem between cards
+  const seatPadX = 20;                              // seat left+right padding
+
+  // Everything in a seat that is not the two rows of cards: name, padding,
+  // row gap. Stable regardless of card size, so it can be measured as-is.
+  const chrome = seat.getBoundingClientRect().height
+    - card.getBoundingClientRect().height * 2;
+
+  const top = host.getBoundingClientRect().top;
+  const available = window.innerHeight - top - 26;  // leave the page margin
+  const tableW = host.getBoundingClientRect().width;
+
+  // Two seat rows give each hand a wider column, but halve the height it can
+  // use. On a short screen that trade goes badly, so try both arrangements and
+  // keep whichever yields the larger card.
+  const arrangements = seats <= 3 ? [1] : [2, 1];
+  const candidates = arrangements.map(rows => {
+    const perRow = Math.ceil(seats / rows);
+    const perSeatH = (available - gap * (rows - 1)) / rows;
+    const seatW = (tableW - gap * (perRow - 1)) / perRow;
+
+    const byHeight = ((perSeatH - chrome) / 2) / CARD_RATIO;
+    const byWidth = (seatW - seatPadX - cardGap * 3) / 4;
+    // Clamp first, then check: the minimum can push a card back above what
+    // actually fits, so comparing unclamped sizes would pick a shape that
+    // still scrolls.
+    const w = Math.max(CARD_MIN, Math.min(CARD_MAX, Math.min(byHeight, byWidth)));
+    const usedH = rows * (chrome + 2 * w * CARD_RATIO) + gap * (rows - 1);
+    return { rows, w, usedH, fits: usedH <= available };
+  });
+
+  const fitting = candidates.filter(c => c.fits);
+  const best = fitting.length
+    ? fitting.reduce((a, b) => (b.w > a.w ? b : a))
+    : candidates.reduce((a, b) => (b.usedH < a.usedH ? b : a));
+
+  const w = best.w;
+  host.style.setProperty('--seat-card-w', Math.floor(w) + 'px');
+  // A single row is the fallback when the two-row shape cannot pay for itself.
+  host.classList.toggle('is-one-row', best.rows === 1 && seats > 3);
+}
+
+// Re-fit when the window changes shape. Deliberately a timer rather than
+// requestAnimationFrame: rAF does not run in a backgrounded or hidden tab, so
+// a player who sets up the game in another tab would come back to an unfitted
+// board. Reading a rect forces layout, so a direct call measures correctly.
+let fitTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(fitTimer);
+  fitTimer = setTimeout(fitTable, 90);
+}, { passive: true });
 
 function renderLog(view) {
   const log = $('#log');
