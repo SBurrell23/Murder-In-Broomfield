@@ -223,11 +223,34 @@
 /* --------------------------------------------------------- the table ---- */
 
 /* Seats flow into columns on wide screens so the board and the table can be
-   read together without a long scroll. */
+   read together without a long scroll. The column count is set per table size
+   rather than left to auto-fit, which wrapped 4 and 5 players awkwardly. */
 .table {
   display: grid; gap: .8rem;
   grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
   align-items: start;
+}
+/* 4 players -> 3 hands, one row. */
+.table[data-seats="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* 5 players -> 4 hands, two rows of two, so each is wider. */
+.table[data-seats="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* 6 players -> 5 hands, three above and two below. All five keep the same
+   width; the bottom pair is centred under the top row rather than stretched,
+   so every hand is read at the same scale. */
+.table[data-seats="5"] { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.table[data-seats="5"] > .seat-card:nth-child(-n+3) { grid-column: span 2; }
+.table[data-seats="5"] > .seat-card:nth-child(4) { grid-column: 2 / span 2; }
+.table[data-seats="5"] > .seat-card:nth-child(5) { grid-column: 4 / span 2; }
+
+@media (max-width: 1080px) {
+  .table[data-seats="3"],
+  .table[data-seats="5"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .table[data-seats="5"] > .seat-card { grid-column: auto !important; }
+}
+@media (max-width: 700px) {
+  .table[data-seats="3"],
+  .table[data-seats="4"],
+  .table[data-seats="5"] { grid-template-columns: minmax(0, 1fr); }
 }
 
 .seat-card {
@@ -361,10 +384,49 @@
 }
 
 .log {
-  list-style: none; margin: 0; padding: 0;
+  list-style: none; margin: 0; padding: 0 .45rem 0 0;
   max-height: 330px; overflow-y: auto;
   display: flex; flex-direction: column-reverse; gap: .5rem;
   font-size: .88rem;
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--brass-dim) rgba(0,0,0,.35);
+}
+/* A brass rail rather than the platform default, which read as a bright
+   grey slab against the panel. */
+.log::-webkit-scrollbar { width: 9px; }
+.log::-webkit-scrollbar-track {
+  background: rgba(0,0,0,.38);
+  border-radius: 5px;
+  border: 1px solid var(--line-soft);
+}
+.log::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--brass), var(--brass-dim));
+  border-radius: 5px;
+  border: 1px solid rgba(0,0,0,.5);
+}
+.log::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #e0bb45, var(--brass));
+}
+
+/* The accusation currently on the table, shown to every player. */
+.accusation-box {
+  background: rgba(201,162,39,.08);
+  border: 1px solid var(--brass-dim);
+  border-radius: var(--r-sm);
+  padding: .7rem .8rem;
+}
+.accusation-box h4 {
+  font-family: var(--type); font-size: .58rem; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--brass); margin: 0 0 .45rem;
+}
+.accusation-box p { margin: 0 0 .4rem; font-size: .92rem; color: var(--text-dim); }
+.accusation-box strong { color: var(--paper); }
+.accusation-cards { display: flex; gap: .4rem; }
+.accusation-cards .card { flex: 1 1 0; min-width: 0; width: auto; max-width: 84px; }
+.accusation-names {
+  margin: .45rem 0 0 !important;
+  font-family: var(--type); font-size: .68rem; color: var(--brass);
 }
 .log li {
   color: var(--text-dim); line-height: 1.35;

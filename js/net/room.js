@@ -24,7 +24,7 @@ export class Host extends Emitter {
     this.t = transport;
     this.code = null;
     this.game = null;
-    this.settings = { scientistId: null, useAccompliceWitness: false, timerMinutes: 10 };
+    this.settings = { scientistId: null, useAccompliceWitness: false, timerMinutes: 3 };
 
     // seat.id is the stable player id; peerId is whatever connection currently
     // owns it, so a reconnecting player can reclaim their seat.

@@ -486,6 +486,9 @@ function renderTable(view) {
     target.append(card);
   }
 
+  // Row shape by table size: 3 card-holders sit in one row; 4 split 2 + 2 so
+  // each is wider; 5 split 3 + 2. Left to auto-fit these wrapped awkwardly.
+  host.dataset.seats = String(host.children.length);
   dealt = true;
 }
 
@@ -504,6 +507,24 @@ function renderActions(view) {
 
   const iAmSci = view.you.id === view.scientistId;
   const me = view.players.find(p => p.id === view.you.id);
+
+  // --- the accusation on the table, shown to everyone ---
+  // The whole table needs to see what was named the moment the badge lands,
+  // not only after the Scientist rules on it - that is the information the
+  // discussion turns on.
+  if (view.pendingAccusation) {
+    const a = view.pendingAccusation;
+    const by = view.players.find(p => p.id === a.byId);
+    const at = view.players.find(p => p.id === a.suspectId);
+    stack.append(el('div.accusation-box', null,
+      el('h4', { text: 'On The Table' }),
+      el('p', null, el('strong', { text: by ? by.name : '?' }), ' accuses ',
+        el('strong', { text: at ? at.name : '?' })),
+      el('div.accusation-cards', null,
+        cardEl(a.meansId, { size: 'sm' }),
+        cardEl(a.clueId, { size: 'sm' })),
+      el('p.accusation-names', { text: `${nameOf(a.meansId)} + ${nameOf(a.clueId)}` })));
+  }
 
   // --- what only you know ---
   const s = view.secrets || {};
@@ -528,9 +549,6 @@ function renderActions(view) {
       const a = view.pendingAccusation;
       const correct = a.suspectId === s.murdererId && a.meansId === s.meansId && a.clueId === s.clueId;
       stack.append(
-        el('p.action-note', null,
-          'They named ', el('strong', { text: nameOf(a.meansId) }), ' and ',
-          el('strong', { text: nameOf(a.clueId) }), '.'),
         el('button', {
           class: 'btn ' + (correct ? 'btn-primary' : 'btn-danger'),
           text: correct ? 'Mark It Correct' : 'Mark It Wrong',

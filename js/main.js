@@ -330,7 +330,7 @@ function renderLobby() {
     aw.disabled = n < 6;
 
     const tm = $('#select-timer');
-    tm.value = String(lobbyState.settings.timerMinutes ?? 10);
+    tm.value = String(lobbyState.settings.timerMinutes ?? 3);
 
     const start = $('#btn-start');
     start.disabled = !session.host.canStart();

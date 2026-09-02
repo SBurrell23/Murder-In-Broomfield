@@ -32,7 +32,7 @@ code chip copies an invite link). Everyone else presses **Join A Case**. With
 four to six players seated, the host begins.
 
 The host can pin a specific player as Forensic Scientist or leave it to chance,
-set the **round timer** (ten minutes by default, or off), and at six players can
+set the **round timer** (three minutes by default, or off), and at six players can
 enable the **Accomplice & Witness** pair.
 
 ### Roles

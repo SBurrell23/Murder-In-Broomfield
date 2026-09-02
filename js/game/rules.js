@@ -9,6 +9,12 @@ import { MEANS } from '../data/means.js';
 import { CLUES } from '../data/clues.js';
 import { CAUSE_OF_DEATH, LOCATIONS, SCENE_TILES } from '../data/tiles.js';
 
+// The log names the cards involved, so the table can look back at what has
+// already been ruled out rather than relying on memory.
+const NAME_BY_ID = new Map();
+for (const it of [...MEANS, ...CLUES]) NAME_BY_ID.set(it.id, it.name);
+const cardName = id => NAME_BY_ID.get(id) || 'an unknown item';
+
 export const ROLE = {
   SCIENTIST: 'scientist',
   MURDERER: 'murderer',
@@ -268,7 +274,9 @@ export class Game {
       clueId === this.solution.clueId;
 
     this.pendingAccusation = { byId: actorId, suspectId, meansId, clueId, correct, round: this.round };
-    this._log('badge', `${me.name} throws a badge at ${suspect.name}.`, { byId: actorId, suspectId });
+    this._log('badge',
+      `${me.name} throws a badge at ${suspect.name}: ${cardName(meansId)} with ${cardName(clueId)}.`,
+      { byId: actorId, suspectId, meansId, clueId });
     return { ok: true };
   }
 
@@ -284,7 +292,9 @@ export class Game {
     const suspect = this.player(acc.suspectId);
 
     if (acc.correct) {
-      this._log('verdict', `${by.name} names ${suspect.name} - and the evidence agrees.`, { correct: true, ...acc });
+      this._log('verdict',
+        `CORRECT - ${suspect.name} did it with ${cardName(acc.meansId)} and ${cardName(acc.clueId)}.`,
+        { correct: true, ...acc });
       if (this.witnessId) {
         // The murderer's team gets one last swing: unmask the Witness.
         this.phase = PHASE.LAST_CHANCE;
@@ -295,7 +305,9 @@ export class Game {
       return { ok: true, correct: true };
     }
 
-    this._log('verdict', `${by.name} names ${suspect.name} - the file says otherwise.`, { correct: false, ...acc });
+    this._log('verdict',
+      `WRONG - ${suspect.name} with ${cardName(acc.meansId)} and ${cardName(acc.clueId)} is ruled out.`,
+      { correct: false, ...acc });
     if (this._allBadgesSpent()) {
       this._end('murderer', 'Every badge spent, and no one saw it. The murderer walks.');
     }
