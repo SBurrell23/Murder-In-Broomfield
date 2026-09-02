@@ -264,6 +264,10 @@ input[type=text]::placeholder { color: var(--text-faint); }
   font-family: var(--type); font-size: .8rem; letter-spacing: .08em;
   color: var(--text-faint);
 }
+/* Sits directly under the actions, so it does not want the full gap. */
+.lobby-fresh { margin-top: .9rem; min-height: 0; color: var(--text-faint); opacity: .8; }
+.lobby-fresh:empty { display: none; }
+
 .net-status.is-error { color: var(--blood-lit); }
 .net-status.is-good  { color: var(--good-lit); }
 

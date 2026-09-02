@@ -34,6 +34,15 @@ four to eight players seated, the host begins.
 The host can pin a specific player as Forensic Scientist or leave it to chance,
 and set the **round timer** (three minutes by default, or off).
 
+A table usually plays several cases in a sitting, so the room deals tiles the way
+you would deal a real deck: **the Location of Crime and Scene Tiles from earlier
+cases go to the discard pile and stay there.** Play again and you get a board you
+have not seen, right up until the deck runs out — ten cases before a location can
+repeat, and enough scene tiles for six or seven cases — at which point the
+discards are shuffled back in and the cycle starts over. The lobby says how much
+of each deck is still fresh. A new room is a new table and starts from a full
+deck.
+
 The **Accomplice & Witness** are a pair, since neither role makes sense without
 the other. At six players they are the host's choice; from seven up they are
 always dealt, and the lobby switch shows as on and locked.
@@ -195,6 +204,7 @@ Players who drop keep their seat and can reclaim it with a stored token; the
 ```bash
 node tests/check-data.mjs   # deck integrity: counts, unique ids, 6 options per tile
 node tests/check-tiles.mjs  # scene tiles: option length, catch-alls, and duds
+node tests/session-tiles.mjs # many cases at one table: no board repeats until the deck turns over
 node tests/sim.mjs          # 1200 randomised full games through the real engine
 node tests/net-sim.mjs      # Host + Clients over a lossy, reordering transport
 node tests/check-art.mjs    # card art: coverage, duplicates, unsafe markup
@@ -205,6 +215,10 @@ accounting, replacement limits, win conditions, and that illegal actions are
 refused. `net-sim.mjs` runs the real `Host` and `Client` classes over a loopback
 transport with latency and jitter, covering seating, per-seat view isolation,
 forged actions, mid-game reconnect, room-full handling and complete games.
+`session-tiles.mjs` plays fifteen consecutive cases at one table and asserts that
+no tile is dealt twice while the deck still holds fresh ones, that a deck turning
+over mid-case carries only the post-turnover draws forward, and that a full cycle
+deals every tile exactly once.
 
 `check-tiles.mjs` guards the scene deck against **duds** — tiles whose options
 the Forensic Scientist cannot point at, because they turn on a state of mind or a

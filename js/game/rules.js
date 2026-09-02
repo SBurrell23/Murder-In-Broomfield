@@ -62,6 +62,49 @@ export function roleLineup(playerCount, opts = {}) {
   return roles.slice(0, playerCount);
 }
 
+/**
+ * A session's tile history: which Locations of Crime and Scene Tiles this table
+ * has already had on the board. One table plays several cases in a sitting, and
+ * drawing fresh every time means an unlucky pair of games can repeat the same
+ * board. So tiles are dealt the way you would deal a real deck - the ones
+ * already used sit in the discard pile until the deck runs out.
+ */
+export function emptyTileHistory() {
+  return { places: [], scenes: [] };
+}
+
+function normaliseHistory(h) {
+  return {
+    places: Array.isArray(h?.places) ? h.places.slice() : [],
+    scenes: Array.isArray(h?.scenes) ? h.scenes.slice() : []
+  };
+}
+
+/**
+ * Shuffle a deck so every tile the table has not seen comes before every tile
+ * it has. A game takes what it needs off the top, which means it exhausts the
+ * fresh tiles before it repeats anything, and `freshCount` marks where the
+ * deck ran out.
+ */
+function orderByFreshness(all, seenIds, rng) {
+  const seen = new Set(seenIds);
+  const fresh = shuffle(all.filter(t => !seen.has(t.id)), rng);
+  const used = shuffle(all.filter(t => seen.has(t.id)), rng);
+  return { order: [...fresh, ...used], freshCount: fresh.length };
+}
+
+/**
+ * Fold one game's draws into the session history. Two things end a cycle and
+ * put every tile back in play: drawing past the fresh tiles mid-game, in which
+ * case only the draws made after the deck turned over carry forward; and
+ * finishing a game having now seen the whole deck.
+ */
+function rollCycle(all, prevSeen, drawn, freshCount) {
+  if (drawn.length > freshCount) return drawn.slice(freshCount);
+  const next = [...new Set([...prevSeen, ...drawn])];
+  return next.length >= all.length ? [] : next;
+}
+
 /** Whether this table gets the Accomplice and Witness. */
 export function pairIsDealt(playerCount, optIn) {
   if (playerCount >= AUTO_PAIR_AT) return true;
@@ -75,7 +118,10 @@ export class Game {
       seed,
       scientistId = null,      // pre-chosen in lobby, or null to randomize
       useAccompliceWitness = false,
-      timerSeconds = 0         // 0 disables the round clock entirely
+      timerSeconds = 0,        // 0 disables the round clock entirely
+      // Locations and scene tiles this table has already had on the board
+      // earlier in the session. They are held back while fresh ones remain.
+      seenTiles = emptyTileHistory()
     } = config;
 
     if (players.length < MIN_PLAYERS || players.length > MAX_PLAYERS) {
@@ -107,7 +153,7 @@ export class Game {
 
     this._assignRoles(players, scientistId, useAccompliceWitness);
     this._dealHands();
-    this._drawTiles();
+    this._drawTiles(seenTiles);
 
     this.phase = PHASE.NIGHT_MURDERER;
     this.solution = { murdererId: this.murdererId, meansId: null, clueId: null };
@@ -162,19 +208,42 @@ export class Game {
     this.clueDeck = clueDeck;
   }
 
-  _drawTiles() {
+  _drawTiles(seenTiles) {
+    const prev = normaliseHistory(seenTiles);
     const cause = shuffle(CAUSE_OF_DEATH, this.rng)[0];
-    const place = shuffle(LOCATIONS, this.rng)[0];
-    const sceneOrder = shuffle(SCENE_TILES, this.rng);
+    const places = orderByFreshness(LOCATIONS, prev.places, this.rng);
+    const scenes = orderByFreshness(SCENE_TILES, prev.scenes, this.rng);
+    const place = places.order[0];
 
     this.tiles = {
       cause: { tileId: cause.id, bullet: null },
       place: { tileId: place.id, bullet: null },
-      scenes: sceneOrder.slice(0, SCENE_TILES_IN_PLAY)
+      scenes: scenes.order.slice(0, SCENE_TILES_IN_PLAY)
         .map(t => ({ tileId: t.id, bullet: null, slot: null }))
     };
     this.tiles.scenes.forEach((s, i) => { s.slot = i; });
-    this.sceneDeck = sceneOrder.slice(SCENE_TILES_IN_PLAY).map(t => t.id);
+    this.sceneDeck = scenes.order.slice(SCENE_TILES_IN_PLAY).map(t => t.id);
+
+    // Everything that has actually reached the board, in the order it got
+    // there. Replacements append to it as they are laid down.
+    this._drawn = {
+      places: [place.id],
+      scenes: this.tiles.scenes.map(s => s.tileId)
+    };
+    this._prevSeen = prev;
+    this._freshCount = { places: places.freshCount, scenes: scenes.freshCount };
+  }
+
+  /**
+   * The session's tile history once this game is over: what the table has now
+   * seen, so the next case can hold those tiles back. When a deck ran out the
+   * cycle starts again, exactly as if the discards had been shuffled back in.
+   */
+  tileHistoryAfter() {
+    return {
+      places: rollCycle(LOCATIONS, this._prevSeen.places, this._drawn.places, this._freshCount.places),
+      scenes: rollCycle(SCENE_TILES, this._prevSeen.scenes, this._drawn.scenes, this._freshCount.scenes)
+    };
   }
 
   _log(kind, text, data = null) {
@@ -417,6 +486,7 @@ export class Game {
     // case file rather than only what survived to the last round.
     this.replacedTiles.push({ slot, tileId: oldId, bullet: s.bullet, round: this.round });
     s.tileId = this.sceneDeck.shift();
+    this._drawn.scenes.push(s.tileId);
     s.bullet = null;
     this.replacingSlot = slot;
     this._log('system', 'A new scene tile is laid on the table.', { slot, oldId, newId: s.tileId });

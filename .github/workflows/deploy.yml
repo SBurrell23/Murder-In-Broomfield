@@ -32,6 +32,8 @@ jobs:
         run: node tests/check-data.mjs
       - name: Scene tile vetting
         run: node tests/check-tiles.mjs
+      - name: Session tiles (no board repeats at one table)
+        run: node tests/session-tiles.mjs
       - name: Rules engine (1200 randomised games)
         run: node tests/sim.mjs
       - name: Netcode (host + clients over a reordering transport)

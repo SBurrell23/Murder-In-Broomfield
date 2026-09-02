@@ -349,6 +349,17 @@ function renderLobby() {
     $('#btn-start').textContent = 'Waiting For The Host';
   }
 
+  // Once a table has played a case, say how much of each deck is still fresh.
+  // The room holds tiles back until they run out, and this is the only place
+  // that promise is visible.
+  const fresh = $('#lobby-fresh');
+  const decks = lobbyState.freshTiles;
+  const played = lobbyState.casesPlayed || 0;
+  fresh.textContent = (played && decks)
+    ? `Case ${played + 1} at this table. ${decks.scenes} of ${decks.scenesTotal} scene tiles and `
+      + `${decks.places} of ${decks.placesTotal} locations still unseen.`
+    : '';
+
   $('#lobby-status').textContent = isHost ? '' : 'Only the host can begin the case.';
 }
 

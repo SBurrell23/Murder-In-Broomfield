@@ -6,7 +6,8 @@
 // own seat is entitled to see.
 
 import { Emitter, MSG, makeRoomCode, HEARTBEAT_MS, SILENCE_MS } from './net.js';
-import { Game, PHASE, MIN_PLAYERS, MAX_PLAYERS } from '../game/rules.js';
+import { Game, PHASE, MIN_PLAYERS, MAX_PLAYERS, emptyTileHistory } from '../game/rules.js';
+import { LOCATIONS, SCENE_TILES } from '../data/tiles.js';
 import { randomSeed } from '../util/rng.js';
 
 const MAX_NAME = 18;
@@ -25,6 +26,13 @@ export class Host extends Emitter {
     this.code = null;
     this.game = null;
     this.settings = { scientistId: null, useAccompliceWitness: false, timerMinutes: 3 };
+
+    // Which locations and scene tiles this room has already put on the board.
+    // It outlives any single case, so a table playing several in a row keeps
+    // getting a fresh board until the decks are used up. A new room starts
+    // over, because a new room is a new table.
+    this.tileHistory = emptyTileHistory();
+    this.casesPlayed = 0;
 
     // seat.id is the stable player id; peerId is whatever connection currently
     // owns it, so a reconnecting player can reclaim their seat.
@@ -220,8 +228,10 @@ export class Host extends Emitter {
       seed,
       scientistId: this.settings.scientistId,
       useAccompliceWitness: this.settings.useAccompliceWitness,
-      timerSeconds: Math.max(0, Number(this.settings.timerMinutes) || 0) * 60
+      timerSeconds: Math.max(0, Number(this.settings.timerMinutes) || 0) * 60,
+      seenTiles: this.tileHistory
     });
+    this.casesPlayed++;
     this.emit('started', this.game);
     this._pushViews();
     return { ok: true };
@@ -230,6 +240,10 @@ export class Host extends Emitter {
   restart() {
     clearTimeout(this._concludeTimer);
     this._concludeTimer = null;
+    // Remember the board before letting go of it, so the next case gets tiles
+    // this table has not seen. Abandoning a case mid-round still counts - the
+    // tiles were face up on the table either way.
+    this.tileHistory = this.game ? this.game.tileHistoryAfter() : this.tileHistory;
     this.game = null;
     this.seats.forEach(s => { /* seats persist across cases */ });
     this._pushLobby();
@@ -335,6 +349,13 @@ export class Host extends Emitter {
       code: this.code,
       settings: { ...this.settings },
       inGame: !!this.game,
+      casesPlayed: this.casesPlayed,
+      freshTiles: {
+        places: LOCATIONS.length - this.tileHistory.places.length,
+        placesTotal: LOCATIONS.length,
+        scenes: SCENE_TILES.length - this.tileHistory.scenes.length,
+        scenesTotal: SCENE_TILES.length
+      },
       minPlayers: MIN_PLAYERS,
       maxPlayers: MAX_PLAYERS,
       players: this.seats.map(s => ({ id: s.id, name: s.name, isHost: s.isHost, connected: s.connected }))
